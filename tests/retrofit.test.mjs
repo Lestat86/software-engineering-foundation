@@ -38,7 +38,7 @@ before(() => {
     '{',
     '  // The base enables strict mode.',
     '  "extends": "../../tsconfig.base.json",',
-    '  "compilerOptions": { "paths": { "@/*": ["./src/*"] }, },',
+    '  "compilerOptions": { "paths": { "@/*": ["./src/*"], "@shared/*": ["../shared/src/*"] }, },',
     '  "include": ["src/**/*.ts"]',
     '}',
   ].join('\n'))
@@ -64,6 +64,7 @@ test('the inventory reports the facts of an existing project and maps them to re
     strict: true,
     noUncheckedIndexedAccess: false,
     exactOptionalPropertyTypes: false,
+    aliases: [['@/*', ['./src/*']], ['@shared/*', ['../shared/src/*']]],
   }])
   assert.deepEqual(inventory.counts, {
     sourceFiles: 2,
@@ -88,6 +89,8 @@ test('the inventory reports the facts of an existing project and maps them to re
     /^CORE-DEBT-001: 1 TODO\/FIXME markers without an issue reference$/,
     /^GIT-SECRET-001: tracked environment file: \.env$/,
     /^hygiene: tracked archive: vendor\/kit-1\.0\.0\.tgz$/,
+    /^STRUCT-BOUNDARY-001: path aliases @\/\*, @shared\/\*: run dependency-cruiser per workspace/,
+    /^DEP-MINIMAL-001: shared\/ is shared through an alias but is not a package/,
   ]) {
     assert.ok(signals.some((signal) => expected.test(signal)), `missing signal ${String(expected)}`)
   }

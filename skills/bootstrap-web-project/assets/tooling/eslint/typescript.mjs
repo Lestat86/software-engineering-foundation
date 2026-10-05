@@ -6,8 +6,8 @@ import tseslint from 'typescript-eslint'
 import {
   arrowFunctionRules,
   codeHealthConfigs,
-  codeHealthRules,
   magicNumberOptions,
+  typeScriptCodeHealthRules,
 } from './base.mjs'
 
 const defaultTypeScriptFiles = ['**/*.{ts,tsx,mts,cts}']
@@ -22,6 +22,7 @@ const defaultLiteralExemptFiles = [
 
 const defaultConstantsFiles = ['**/*.constants.{ts,mts,cts}']
 
+/** @public Part of the module API that project configurations compose. */
 export const createTypeScriptConfig = ({
   constantsFiles = defaultConstantsFiles,
   files = defaultTypeScriptFiles,
@@ -62,7 +63,7 @@ export const createTypeScriptConfig = ({
       },
       rules: {
         ...arrowFunctionRules,
-        ...codeHealthRules,
+        ...typeScriptCodeHealthRules,
         'import/first': 'error',
         'import/newline-after-import': 'error',
         'import/no-cycle': ['error', { ignoreExternal: true }],
@@ -96,9 +97,6 @@ export const createTypeScriptConfig = ({
         '@typescript-eslint/no-unnecessary-type-assertion': 'error',
         '@typescript-eslint/return-await': ['error', 'in-try-catch'],
         '@typescript-eslint/switch-exhaustiveness-check': 'error',
-        // `strictNullChecks` proves nullability from the types; the SonarJS
-        // rule ignores them and reports typed values such as a `string`.
-        'sonarjs/null-dereference': 'off',
         '@typescript-eslint/ban-ts-comment': [
           'error',
           {

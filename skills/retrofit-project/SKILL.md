@@ -42,7 +42,8 @@ request. Work in the assisted mode: you analyze and propose, the person decides.
    or exception proposed. Write the inventory and the assessment to
    `docs/retrofit-assessment.md` in the project; `docs/foundation/` belongs to
    the foundation and is replaced by synchronization.
-4. **Plan the waves** described in [waves](references/waves.md), one plan per
+4. **Plan the waves** described in [waves](references/waves.md), which also
+   has a worked example for a workspace layout with path aliases, one plan per
    pull request in `docs/features/retrofit-<n>/plan.md`, from the plan template
    once wave 0 has installed it, and confirm the order with the person.
 5. **Implement one wave at a time.** Each wave ends with

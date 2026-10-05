@@ -132,8 +132,15 @@ from one file at a time:
   that does not exist before the build, and the typecheck verifies them.
 
 Cycles stay with `import/no-cycle` in ESLint, which reports them in the editor
-and at commit. Add project-specific boundaries, such as a feature that must not
-import another feature's internals, as further `forbidden` entries.
+and at commit. A `/// <reference types>` directive only brings ambient types
+and is not a development dependency import.
+
+Project-specific rules, such as a feature that must not import another
+feature's internals, and option overrides, such as `tsConfig` for path
+aliases, go in `.dependency-cruiser.local.mjs`, which default-exports
+`{ forbidden, options }`: its rules are added, a rule with the same name
+replaces the foundation's, and its options override the foundation's. The
+foundation's file stays untouched, so synchronization keeps updating it.
 
 ## Pre-merge gate
 
@@ -147,7 +154,13 @@ packages used in ways Knip cannot trace: tools run by the Git hooks, the
 secretlint preset loaded from `.secretlintrc.json`, and dependencies a profile
 declares before the first import, such as monorepo workspace packages and the
 Supabase client. Remove those last entries once the code imports them. Mark an
-export that is deliberate public API with a `/** @public */` comment.
+export that is deliberate public API with a `/** @public */` comment. Project
+options go in `knip.local.js`, whose `ignore` and `ignoreDependencies` entries
+are added to the foundation's.
+
+Projects that add the foundation's ESLint rules to their own configuration
+use `codeHealthConfigs` with `typeScriptCodeHealthRules` for TypeScript files
+and `codeHealthRules` for JavaScript files.
 
 The coverage step works as follows:
 

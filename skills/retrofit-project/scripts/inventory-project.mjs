@@ -167,7 +167,8 @@ const describeTypeScript = (projectDirectory, packageDirectories) => {
       : {}
     const options = { ...base.compilerOptions, ...config.compilerOptions }
     const enabled = Object.fromEntries(flags.map((flag) => [flag, options[flag] === true]))
-    return [{ path, unparsed: config.unparsed === true, ...enabled }]
+    const aliases = Object.entries(options.paths ?? {})
+    return [{ path, unparsed: config.unparsed === true, ...enabled, aliases }]
   })
 }
 
@@ -197,6 +198,25 @@ const describeTooling = (projectDirectory, files) => {
     hooks: { preCommit: hook('pre-commit'), commitMsg: hook('commit-msg') },
     ci: files.filter((file) => /^\.github\/workflows\/[^/]+\.ya?ml$|^\.gitlab-ci\.yml$/.test(file)),
     foundationRecord: existsSync(resolve(projectDirectory, '.engineering-foundation.yml')),
+  }
+}
+
+// Path aliases and code shared outside any package change how the dependency
+// rules run, so they are reported before the retrofit is planned.
+const describeAliasSignals = ({ typescript, workspaces }, add) => {
+  const aliased = typescript.filter((entry) => entry.aliases.length > 0)
+  const aliases = aliased.flatMap((entry) => entry.aliases)
+  if (aliases.length > 0) {
+    const names = [...new Set(aliases.map(([name]) => name))].join(', ')
+    const advice = 'run dependency-cruiser per workspace with its tsconfig (see the retrofit waves)'
+    add('STRUCT-BOUNDARY-001', `path aliases ${names}: ${advice}`)
+  }
+  const outside = new Set(aliases.flatMap(([, targets]) => targets)
+    .map((target) => /^\.\.\/([^/]+)\//.exec(target)?.[1])
+    .filter((directory) => directory !== undefined && !workspaces.includes(directory)))
+  const consequence = 'the dependencies it imports are declared by its consumers, not by itself'
+  for (const directory of outside) {
+    add('DEP-MINIMAL-001', `${directory}/ is shared through an alias but is not a package: ${consequence}`)
   }
 }
 
@@ -230,6 +250,7 @@ const describeSignals = (inventory) => {
   if (tooling.ci.length === 0) {
     add('CI-GATE-001', 'no CI pipeline; premerge with the pull request attestation is the only gate')
   }
+  describeAliasSignals(inventory, add)
   const loose = typescript.filter((entry) => !entry.strict || !entry.noUncheckedIndexedAccess)
   for (const config of loose) {
     add('TS-STRICT-001', `${config.path}: strict ${String(config.strict)}, noUncheckedIndexedAccess ${String(config.noUncheckedIndexedAccess)}`)

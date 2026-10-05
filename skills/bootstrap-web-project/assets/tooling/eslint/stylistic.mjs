@@ -3,6 +3,7 @@ import { defineConfig } from 'eslint/config'
 
 const defaultCodeFiles = ['**/*.{js,mjs,cjs,ts,tsx,mts,cts,jsx}']
 
+/** @public Part of the module API that project configurations compose. */
 export const createStylisticConfig = ({ files = defaultCodeFiles } = {}) => defineConfig({
   name: 'foundation/stylistic',
   files,

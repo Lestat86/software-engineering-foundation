@@ -98,10 +98,11 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 2 — requisiti nel progetto, template di piano | ✅ fatto | `feat/project-knowledge` | 0020 |
 | Fase 3 — plugin e revisore | ✅ fatto | `feat/claude-plugin` | 0021 |
 | Fase 4 — skill `retrofit-project`, inventario, baseline | ✅ fatto | `feat/retrofit-skill` | 0022 |
+| Fase 4 — prova generale su una copia di AntiPhishing-Bot | ✅ fatta, buchi corretti | `fix/retrofit-rehearsal` | 0022 |
 | Fase 4 — applicazione al pilota AntiPhishing-Bot | ⏸️ rinviata (decisione 2026-10-05) | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/retrofit-skill`; tutti i branch sono pushati sul fork.
+`fix/retrofit-rehearsal`.
 
 Decisioni prese durante il lavoro:
 
@@ -160,6 +161,21 @@ Decisioni prese durante il lavoro:
   conferma i segnali dell'analisi manuale: Yarn 1, `typecheck` e `npx` nel
   pre-commit, nessuna CI, `noUncheckedIndexedAccess` assente, 1 soppressione,
   1 TODO non tracciato, un `.tgz` in `vendor/`.
+- **Prova generale del retrofit** su un clone di AntiPhishing-Bot (`main`) in
+  `tests/.generated/`, mai committato: ondata 0 e baseline dell'ondata 1
+  eseguite davvero. Buchi trovati e corretti: versioni di stack bloccanti in
+  `sync-foundation`, strumenti confrontati sui workspace invece che sulla
+  radice, `null-dereference` nelle regole "sciolte", alias diversi per
+  workspace e `shared/` non pacchetto per dependency-cruiser, falso positivo
+  su `/// <reference types>`, file SEF non adattabili senza conflitti (ora
+  `*.local`), premerge che passava con report di copertura vuoto o vecchio,
+  funzione di una riga mai chiamata contata come coperta, warning non
+  congelati dalle bulk suppressions, `.yarnrc.yml` e `.gitignore` per Yarn
+  Modern, configurazioni duplicate di lint-staged/commitlint, copertura con
+  `allowExternal`, esempi nella documentazione segnalati da secretlint.
+  Risultati sul progetto (per quando si farà): 7 violazioni ESLint da
+  congelare, `shared/` che importa `zod` senza dichiararlo, 5 dipendenze e 7
+  file inutilizzati secondo Knip.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).

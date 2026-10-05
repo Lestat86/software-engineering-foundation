@@ -159,3 +159,33 @@ test('the command line reports a dry run and refuses a directory without a recor
   assert.equal(refused.status, 1)
   assert.match(refused.stderr, /\.engineering-foundation\.yml not found/)
 })
+
+test('stack versions are reported without blocking; foundation tools and scripts are required', () => {
+  const projectDirectory = freshProject()
+  const packageJson = JSON.parse(read(projectDirectory, 'package.json'))
+  write(projectDirectory, 'package.json', JSON.stringify({
+    ...packageJson,
+    dependencies: { ...packageJson.dependencies, fastify: '^5.0.0' },
+  }))
+
+  const report = syncFoundation({ projectDirectory })
+  assert.deepEqual(report.manifestChanges, [])
+  assert.deepEqual(report.stackChanges, [
+    `dependency fastify: ^5.0.0 → ${packageJson.dependencies.fastify}`,
+  ])
+  assert.equal(report.aligned, true)
+})
+
+test('a project without a foundation root template must still expose the foundation scripts', () => {
+  const projectDirectory = freshProject()
+  const manifest = read(projectDirectory, '.engineering-foundation.yml')
+  // A retrofitted layout: the stacks are workspaces, the root is the project's own.
+  write(projectDirectory, '.engineering-foundation.yml', manifest
+    .replace(/^workspaces: .*$/m, 'workspaces: {".":"fastify"}'))
+  const packageJson = JSON.parse(read(projectDirectory, 'package.json'))
+  const { premerge, ...scripts } = packageJson.scripts
+  write(projectDirectory, 'package.json', JSON.stringify({ ...packageJson, scripts }))
+
+  assert.ok(premerge)
+  assert.deepEqual(syncFoundation({ projectDirectory }).manifestChanges, ['script premerge: missing'])
+})

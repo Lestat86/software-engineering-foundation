@@ -34,7 +34,24 @@ New and changed code meets the foundation from the first wave, while the
 existing backlog shrinks at the pace the team chooses. Each wave is a small
 reviewable change, and the pilot can be paused between waves.
 
-`sync-foundation.mjs` compares exact dependency versions with the profiles, so
-a retrofitted project stays "not aligned" until its versions match or the
-difference is recorded as an exception. The inventory's TypeScript check
-follows one relative `extends` level only.
+A rehearsal on a copy of a real project (workspaces, a Capacitor frontend, a
+`shared/` folder behind path aliases, Yarn 1, its own ESLint preset) drove
+these refinements:
+
+- `sync-foundation.mjs` requires only the tools behind the checks and the
+  foundation scripts; the stack versions the foundation verified are reported
+  without blocking, so a project on another stack can be aligned.
+- The dependency-cruiser and Knip configurations load optional
+  `.dependency-cruiser.local.mjs` and `knip.local.js`, so a project adapts
+  them without editing foundation-owned files.
+- `typeScriptCodeHealthRules` lets a project add the foundation's rules to
+  its own ESLint configuration without the false positives
+  `sonarjs/null-dereference` reports on typed code.
+- `premerge` clears its own report directory, fails without a coverage
+  report, counts an uncalled one-line function as uncovered and lists changed
+  sources outside the coverage scope: the rehearsal had passed with an empty
+  report.
+- The waves reference carries the steps the rehearsal needed and a worked
+  example.
+
+The inventory's TypeScript check follows one relative `extends` level only.

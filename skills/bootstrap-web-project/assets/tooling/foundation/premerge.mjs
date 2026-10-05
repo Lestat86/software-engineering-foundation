@@ -66,6 +66,7 @@ const lineHits = (fileCoverage) => {
 }
 
 const SOURCE_FILE = /\.[cm]?[jt]sx?$/
+const APPLICATION_SOURCE = /(^|\/)src\//
 const TEST_FILE = /((^|\/)(test|e2e)\/)|(\.(test|spec)\.[cm]?[jt]sx?$)/
 
 /**
@@ -79,7 +80,10 @@ export const measureDiffCoverage = ({ changedLines, coverage, projectDirectory }
   for (const [file, lines] of changedLines) {
     const fileCoverage = coverage[resolve(projectDirectory, file)]
     if (fileCoverage === undefined) {
-      if (SOURCE_FILE.test(file) && !TEST_FILE.test(file) && lines.size > 0) {
+      // Only application sources are expected in a report: configuration and
+      // tooling files are never measured.
+      if (APPLICATION_SOURCE.test(file) && SOURCE_FILE.test(file) && !TEST_FILE.test(file)
+        && lines.size > 0) {
         result.unmeasured.push(file)
       }
       continue

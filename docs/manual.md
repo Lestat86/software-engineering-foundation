@@ -98,8 +98,8 @@ hooks are never installed into a parent repository.
 | `.config/eslint/` | The shared ESLint modules, composed by `eslint.config.mjs`. |
 | `.config/typescript/` | The shared strict TypeScript configurations. |
 | `.config/foundation/` | The record, exception and plan checker (`check-foundation.mjs`), the pre-merge script (`premerge.mjs`), the known requirement identifiers (`requirements.json`) and the hash of every foundation-owned file (`assets.json`). |
-| `.dependency-cruiser.mjs` | Dependency class and boundary rules. |
-| `knip.config.js` | Unused file, export and dependency detection, run by `premerge`. |
+| `.dependency-cruiser.mjs` | Dependency class and boundary rules. Project rules and options go in `.dependency-cruiser.local.mjs`. |
+| `knip.config.js` | Unused file, export and dependency detection, run by `premerge`. Project options go in `knip.local.js`. |
 | `.secretlintrc.json` | Secret scanning rules. |
 | `.husky/`, `commitlint.config.mjs`, `lint-staged.config.mjs` | Git hooks: commit message and staged-file checks. |
 | `.github/pull_request_template.md`, `.gitlab/merge_request_templates/Default.md` | Pull and merge request templates with the pre-merge checklist; keep the one for your platform. |
@@ -193,6 +193,9 @@ premerge: passed on 4c52ce0a…
 | `premerge`: diff coverage below the minimum | Add tests for the listed `file:lines`, or remove the code if nothing needs it. |
 | `premerge`: baseline grew | Fix the new violations; never re-run `--suppress-all` to hide them. |
 | ESLint: suppressions left that do not occur anymore | Good news: run `corepack yarn eslint . --prune-suppressions` and commit the smaller baseline. |
+| `premerge`: no coverage report | Install `@vitest/coverage-v8` at the vitest version of each workspace and add a `coverage` block with `include` to its vitest configuration. |
+| `premerge` warning: changed source outside the coverage scope | Intended for entry points; otherwise widen `coverage.include`. With `allowExternal`, start every pattern with `**/`. |
+| `lint:secrets` on a documentation example | Put `secretlint-disable-next-line` in a comment on the line before it, such as `<!-- secretlint-disable-next-line -->` in Markdown. |
 | `premerge`: base not found | `git fetch origin`, or set `FOUNDATION_BASE_REF` to the branch you will merge into. |
 | `lint:foundation`: plan without front matter, with an unknown status or missing a section | Start from `docs/features/_template/plan.md` and keep every heading, even when a section only says "none". |
 | `lint:foundation`: plan with open blocking questions | Answer them, record the answers under "Decisions", empty the list, then move the status forward. |
@@ -321,6 +324,15 @@ a new violation instead of suppressing it. ESLint itself fails when a
 suppression no longer matches anything; run
 `corepack yarn eslint . --prune-suppressions` to shrink the baseline.
 
+The [waves reference](../skills/retrofit-project/references/waves.md) has the
+exact steps and a worked example for a project with `frontend/`, `server/`
+and a `shared/` folder reached through path aliases: the manifest, the
+scripts, adding the foundation's ESLint rules to an existing configuration,
+running dependency-cruiser per workspace, Knip and coverage settings. Adapt
+the foundation's dependency-cruiser and Knip configurations through
+`.dependency-cruiser.local.mjs` and `knip.local.js`, never by editing the
+foundation's files.
+
 ## Updating a project to a new foundation version
 
 The files the foundation owns (everything under `.config/`, the hooks, the
@@ -344,8 +356,10 @@ The first command only reports; the second writes. Each file gets one status:
 | `missing` | Deleted in your project. | Nothing. To restore it, remove its entry from `assets.json` and run again: it becomes `add`. If you removed it on purpose, record why in `docs/exceptions.yml`; the version stays unaligned until the file is back. |
 | `obsolete` | No longer part of the foundation. | Nothing; delete it yourself if nothing uses it. |
 
-Lines starting with `manual` list dependencies and scripts to change in
-`package.json`; run `corepack yarn install` afterwards. The record's
+Lines starting with `manual` list the tools and scripts the foundation's checks
+need; add them to the root `package.json` and run `corepack yarn install`.
+Lines starting with `stack` are the versions of your stack the foundation was
+verified with; they never block, and upgrading to them is optional. The record's
 `foundationVersion` moves to the new version only when no conflict, missing
 file or manual change remains. Finish with `corepack yarn validate`. A major
 version can make code that passed before fail; its ADR describes the

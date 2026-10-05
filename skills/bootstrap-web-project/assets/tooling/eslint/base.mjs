@@ -58,6 +58,7 @@ export const foundationPlugin = {
 
 // Shared by the JavaScript and TypeScript configurations. The SonarJS settings
 // are left out so they cannot override the React version detection.
+/** @public Part of the module API that project configurations compose. */
 export const codeHealthConfigs = [
   comments.recommended,
   {
@@ -70,6 +71,7 @@ export const codeHealthConfigs = [
 // CORE-SUPPRESS-001, CORE-DEBT-001 and CORE-COMPLEXITY-001. The SonarJS marker
 // rules are replaced by the issue-reference rule, which accepts tracked debt
 // instead of rejecting every marker.
+/** @public For JavaScript; TypeScript files use `typeScriptCodeHealthRules`. */
 export const codeHealthRules = {
   '@eslint-community/eslint-comments/require-description': [
     'error',
@@ -83,6 +85,17 @@ export const codeHealthRules = {
   'sonarjs/todo-tag': 'off',
 }
 
+/**
+ * @public The code health rules for TypeScript files, also for projects that
+ * add them on top of their own configuration. `strictNullChecks` proves
+ * nullability from the types; `sonarjs/null-dereference` ignores them and
+ * reports typed values such as a `string`.
+ */
+export const typeScriptCodeHealthRules = {
+  ...codeHealthRules,
+  'sonarjs/null-dereference': 'off',
+}
+
 // Numeric literals stay readable in files that are themselves declarations of
 // values (tool configuration) or the specification of a behavior (tests).
 /** @public Spread into `literalExemptFiles` to extend rather than replace the defaults. */
@@ -94,6 +107,7 @@ export const defaultLiteralExemptFiles = [
   '**/.config/**/*.{js,mjs,cjs}',
 ]
 
+/** @public Part of the module API that project configurations compose. */
 export const foundationIgnores = {
   name: 'foundation/ignores',
   ignores: [
@@ -110,6 +124,7 @@ export const foundationIgnores = {
 // variable. Generators are excluded because they have no arrow form. A project
 // that sets its own `no-restricted-syntax` replaces this entry rather than
 // adding to it, so it must repeat the selector.
+/** @public Part of the module API that project configurations compose. */
 export const arrowFunctionRules = {
   'func-style': ['error', 'expression'],
   'prefer-arrow-callback': [
@@ -128,6 +143,7 @@ export const arrowFunctionRules = {
 
 // -1, 0 and 1 carry no domain meaning to extract, and an array index is already
 // named by the collection it indexes.
+/** @public Part of the module API that project configurations compose. */
 export const magicNumberOptions = {
   detectObjects: true,
   enforceConst: true,
@@ -135,6 +151,7 @@ export const magicNumberOptions = {
   ignoreArrayIndexes: true,
 }
 
+/** @public Part of the module API that project configurations compose. */
 export const createJavaScriptConfig = ({
   files = defaultJavaScriptFiles,
   literalExemptFiles = defaultLiteralExemptFiles,

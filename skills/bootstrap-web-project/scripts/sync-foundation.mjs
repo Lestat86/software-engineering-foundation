@@ -56,6 +56,19 @@ const rootProfiles = ({ profiles, workspaces }) => {
   return profiles.filter((profileName) => !workspaceProfiles.has(profileName))
 }
 
+// The scripts a foundation project runs its checks through. A project whose
+// root is not a foundation template, such as a retrofitted one, must still
+// expose them, with commands that fit its layout.
+const FOUNDATION_SCRIPTS = [
+  'lint',
+  'lint:code',
+  'lint:deps',
+  'lint:foundation',
+  'lint:secrets',
+  'validate',
+  'premerge',
+]
+
 const expectedDependencies = ({ profiles }, versions) => {
   return Object.assign({}, ...profiles.flatMap((profileName) => {
     const profile = versions.profiles[profileName]
@@ -70,22 +83,46 @@ const expectedScripts = (record, versions) => {
   }))
 }
 
-/** Compares declared dependencies and root scripts with the current foundation. */
+const describeScriptChanges = (record, versions, scripts) => {
+  const expected = expectedScripts(record, versions)
+  if (Object.keys(expected).length === 0) {
+    return FOUNDATION_SCRIPTS
+      .filter((name) => scripts[name] === undefined)
+      .map((name) => `script ${name}: missing`)
+  }
+  return Object.entries(expected)
+    .filter(([name, command]) => scripts[name] !== command)
+    .map(([name, command]) => `script ${name}: ${scripts[name] ?? 'missing'} → ${command}`)
+}
+
+/**
+ * Compares declared dependencies and root scripts with the current foundation.
+ * The tools behind the checks (`commonDevDependencies`) and the scripts are
+ * required; the rest of each profile's versions are the stack the foundation
+ * verified, reported for information because a project may run another one.
+ */
 const describeManifestChanges = ({ projectDirectory, record, versions }) => {
   const declared = Object.assign({}, ...['.', ...Object.keys(record.workspaces)].map((directory) => {
     const manifest = readJson(resolve(projectDirectory, directory, 'package.json'))
     return { ...manifest.dependencies, ...manifest.devDependencies }
   }))
-  const scripts = readJson(resolve(projectDirectory, 'package.json')).scripts ?? {}
+  const root = readJson(resolve(projectDirectory, 'package.json'))
+  const rootDeclared = { ...root.dependencies, ...root.devDependencies }
+  const differing = (expected, actual) => Object.entries(expected)
+    .filter(([name, version]) => actual[name] !== version)
+    .map(([name, version]) => `dependency ${name}: ${actual[name] ?? 'missing'} → ${version}`)
+  // The tools run from the root, so they are declared there.
+  const tooling = versions.commonDevDependencies
+  const stack = Object.fromEntries(Object.entries(expectedDependencies(record, versions))
+    .filter(([name]) => !(name in tooling)))
 
-  return [
-    ...Object.entries(expectedDependencies(record, versions))
-      .filter(([name, version]) => declared[name] !== version)
-      .map(([name, version]) => `dependency ${name}: ${declared[name] ?? 'missing'} → ${version}`),
-    ...Object.entries(expectedScripts(record, versions))
-      .filter(([name, command]) => scripts[name] !== command)
-      .map(([name, command]) => `script ${name}: ${scripts[name] ?? 'missing'} → ${command}`),
-  ]
+  return {
+    required: [
+      ...differing(tooling, rootDeclared),
+      ...describeScriptChanges(record, versions, root.scripts ?? {}),
+    ],
+    stack: differing(stack, declared),
+  }
 }
 
 const ALIGNED_ACTIONS = new Set(['add', 'current', 'update'])
@@ -184,7 +221,11 @@ export const syncFoundation = ({ projectDirectory, apply = false }) => {
     actions.push({ path, action: 'obsolete' })
   }
 
-  const manifestChanges = describeManifestChanges({ projectDirectory, record, versions })
+  const { required: manifestChanges, stack: stackChanges } = describeManifestChanges({
+    projectDirectory,
+    record,
+    versions,
+  })
   const aligned = actions.every(({ action }) => ALIGNED_ACTIONS.has(action))
     && manifestChanges.length === 0
 
@@ -198,6 +239,7 @@ export const syncFoundation = ({ projectDirectory, apply = false }) => {
     foundationVersion: versions.foundationVersion,
     manifestChanges,
     projectVersion: record.foundationVersion,
+    stackChanges,
   }
 }
 
@@ -237,6 +279,7 @@ const runCli = (argv) => {
     `foundation ${report.projectVersion} → ${report.foundationVersion}`,
     ...(lines.length === 0 ? ['every foundation file is current'] : lines),
     ...report.manifestChanges.map((change) => `manual    ${change}`),
+    ...report.stackChanges.map((change) => `stack     ${change} (verified version, optional)`),
     outcome,
     values.apply ? '' : 'dry run: nothing was written; add --apply to write',
   ].filter((line) => line !== '').join('\n') + '\n')

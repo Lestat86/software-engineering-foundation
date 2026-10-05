@@ -3,6 +3,7 @@ import globals from 'globals'
 
 const defaultNodeFiles = ['**/*.{js,mjs,cjs,ts,mts,cts}']
 
+/** @public Part of the module API that project configurations compose. */
 export const createNodeConfig = ({
   allowConsole = false,
   files = defaultNodeFiles,

@@ -108,6 +108,11 @@ test('the generated Fastify project scans committable files for secrets without 
   writeFileSync(ignoredPath, `GITHUB_TOKEN=${token}\n`)
   assert.equal(scan().status, 0, 'a file Git ignores cannot be committed and is not scanned')
 
+  const examplePath = resolve(projectDirectory, 'EXAMPLE.md')
+  context.after(() => rmSync(examplePath, { force: true }))
+  writeFileSync(examplePath, `<!-- secretlint-disable-next-line -->\nexport TOKEN=${token}\n`)
+  assert.equal(scan().status, 0, 'a documented example marked with a comment is not reported')
+
   writeFileSync(leakPath, `token = "${token}"\n`)
   const result = scan()
   assert.equal(result.status, 1, 'a committable token fails the scan')

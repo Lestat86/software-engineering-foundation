@@ -7,6 +7,7 @@ import globals from 'globals'
 
 const defaultReactFiles = ['**/*.{jsx,tsx}']
 
+/** @public Part of the module API that project configurations compose. */
 export const createReactConfig = ({
   attributes = {},
   components = {},
@@ -42,6 +43,7 @@ export const createReactConfig = ({
   },
 })
 
+/** @public Part of the module API that project configurations compose. */
 export const createViteReactRefreshConfig = ({
   files = defaultReactFiles,
 } = {}) => defineConfig({
