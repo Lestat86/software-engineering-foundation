@@ -95,12 +95,12 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 1b — Knip | ✅ fatto | `01b3ecd` | 0018 |
 | Fase 1b — Stryker | ⏸️ rinviato | — | — |
 | `sync-foundation` | ✅ fatto | `feat/sync-foundation` | 0019 |
-| Fase 2 — requisiti nel progetto, template di piano | ☐ | — | — |
+| Fase 2 — requisiti nel progetto, template di piano | ✅ fatto | `feat/project-knowledge` | 0020 |
 | Fase 3 — plugin e revisore | ☐ | — | — |
 | Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/sync-foundation`.
+`feat/project-knowledge`.
 
 Decisioni prese durante il lavoro:
 
@@ -135,6 +135,13 @@ Decisioni prese durante il lavoro:
 - **Template corretti grazie a Knip:** rimossi `pino-pretty` (mai usato) e
   cinque export locali; tolta la riga ridondante `collection` da
   `nest-cli.json`.
+- **Requisiti nel progetto:** copiate **tutte** le reference in
+  `docs/foundation/`, non solo quelle applicabili, perché si linkano tra loro;
+  un indice generato (`README.md`) separa le applicabili (profili, livello,
+  CI) da quelle presenti solo per riferimento. Sono asset gestiti da
+  `sync-foundation`.
+- **Template di piano in inglese**, sezioni in inglese; il controllo dei piani
+  sta in `lint:foundation` (non in `premerge`), così gira anche in CI.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).

@@ -62,6 +62,9 @@ Next.js is intentionally outside the initial scope.
   levels.
 - Production code never imports development dependencies, and client, server
   and shared packages keep their boundaries; `lint` checks both.
+- Feature plans live in `docs/features/` with the code, and `lint` checks that
+  a plan has no open blocking question once work starts and no unsettled
+  acceptance criterion once done.
 - Every project records its workflow mode, `assisted` or `autonomous`, and its
   exceptions in an expiring register checked by `lint`.
 

@@ -45,3 +45,23 @@ explicit and checkable after bootstrap. The generated
 - **Sources:** [OWASP ASVS 5.0.0](https://github.com/OWASP/ASVS/tree/v5.0.0/5.0), practitioner experience with production TypeScript applications.
 - **Exceptions:** None. A deviation from a SHOULD requirement may be recorded
   in the same register when the reason deserves an owner and a review date.
+
+## `RECORD-PLAN-001` — plans live with the code and gate the work
+
+- **Level:** MUST
+- **Applies to:** features planned before implementation
+- **Risk levels:** R1, R2, R3
+- **Requirement:** Keep the plan of a feature in `docs/features/<slug>/plan.md`,
+  from the generated template, with its front matter (`issue`, `status`,
+  `risk-reassessment`, optional `workflow`) and every template section. Answer
+  every blocking question before the status leaves `draft`, record divergences
+  under "Changes during implementation", and settle every acceptance criterion
+  as checked, manual with an owner, or deferred to an issue before `done`.
+- **Rationale:** The analysis is where most of the value of planned work lies.
+  Kept in Git it is the reviewer's criteria and the project's memory; kept in a
+  chat or an agent's private memory it is lost to everyone else.
+- **Verification:** `check-foundation.mjs` rejects a plan without front matter,
+  with an unknown status or workflow, missing a section, `ready` or later with
+  an open blocking question, or `done` with an unsettled criterion.
+- **Sources:** Practitioner experience with agent-assisted development.
+- **Exceptions:** Small changes that need no analysis need no plan.

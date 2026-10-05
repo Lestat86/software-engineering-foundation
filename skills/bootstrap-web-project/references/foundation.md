@@ -20,7 +20,9 @@ Then apply the [shared tooling implementation](tooling.md).
 
 Generate `.engineering-foundation.yml` with the foundation version, selected
 profiles, security level, accessibility target, package manager, CI choice and
-workflow mode, and an empty `docs/exceptions.yml` register. Both are validated
+workflow mode, an empty `docs/exceptions.yml` register, a copy of these
+references in `docs/foundation/` with an index of the ones that apply, and the
+plan and specification templates in `docs/features/`. Both are validated
 by `.config/foundation/check-foundation.mjs` as defined in the
 [project record standard](standards/project-record.md).
 

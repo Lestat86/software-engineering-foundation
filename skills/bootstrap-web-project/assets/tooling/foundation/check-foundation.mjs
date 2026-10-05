@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { relative, resolve } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 
@@ -21,6 +21,24 @@ const SEMANTIC_VERSION = /^\d+\.\d+\.\d+$/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const REQUIRED_EXCEPTION_FIELDS = ['id', 'scope', 'justification', 'owner', 'expires']
 const PERCENT = 100
+
+const FEATURES_DIRECTORY = 'docs/features'
+const PLAN_STATUSES = new Set(['draft', 'ready', 'in-progress', 'done'])
+const STARTED_STATUSES = new Set(['ready', 'in-progress', 'done'])
+const PLAN_SECTIONS = [
+  'Goal',
+  'Verified context',
+  'Decisions',
+  'Out of scope',
+  'Invariants',
+  'Files and commits',
+  'Acceptance',
+  'Tests',
+  'Blocking questions',
+  'Changes during implementation',
+  'Pull request description',
+]
+const SETTLED_CRITERION = /(^- \[x\] )|(manual: \S)|(deferred: #\d)/
 
 // Dependencies that bring authentication, payments or identity data: each is an
 // R2 trigger, so an R1 project that installs one must be reclassified
@@ -168,14 +186,104 @@ const checkExceptions = (projectDirectory, today, report) => {
   report.exceptionCount = register.exceptions.length
 }
 
+const stripComments = (text) => {
+  let result = text
+  let start = result.indexOf('<!--')
+  while (start !== -1) {
+    const end = result.indexOf('-->', start)
+    result = end === -1 ? result.slice(0, start) : result.slice(0, start) + result.slice(end + '-->'.length)
+    start = result.indexOf('<!--')
+  }
+  return result
+}
+
+/** Splits a plan into its YAML front matter and its level-two sections. */
+const parsePlan = (text) => {
+  const [, frontMatter, body] = text.split(/^---$/m)
+  const sections = new Map()
+  let heading
+  for (const line of (body ?? text).split('\n')) {
+    if (line.startsWith('## ')) {
+      heading = line.slice('## '.length).trim()
+      sections.set(heading, [])
+    } else if (heading !== undefined) {
+      sections.get(heading).push(line)
+    }
+  }
+  const items = (name) => stripComments((sections.get(name) ?? []).join('\n'))
+    .split('\n')
+    .filter((line) => line.startsWith('- '))
+  return { front: frontMatter === undefined ? undefined : parse(frontMatter), items, sections }
+}
+
+const checkPlanStatus = (plan, label, report) => {
+  const status = plan.front.status
+  const openQuestions = plan.items('Blocking questions')
+  if (STARTED_STATUSES.has(status) && openQuestions.length > 0) {
+    report.errors.push(`${label} is ${status} with ${String(openQuestions.length)} open blocking questions`)
+  }
+  if (status !== 'done') {
+    return
+  }
+  const criteria = plan.items('Acceptance')
+  const unsettled = criteria.filter((criterion) => !SETTLED_CRITERION.test(criterion))
+  if (criteria.length === 0) {
+    report.errors.push(`${label} is done but lists no acceptance criterion`)
+  }
+  for (const criterion of unsettled) {
+    report.errors.push(`${label} is done with an unsettled criterion: ${criterion.slice('- '.length)}`)
+  }
+}
+
+const checkPlan = (path, projectDirectory, report) => {
+  const label = relative(projectDirectory, path)
+  const plan = parsePlan(readFileSync(path, 'utf8'))
+  if (plan.front === undefined || plan.front === null) {
+    report.errors.push(`${label} has no front matter`)
+    return
+  }
+  if (!PLAN_STATUSES.has(plan.front.status)) {
+    report.errors.push(`${label}: status must be draft, ready, in-progress or done`)
+  }
+  if (plan.front.workflow !== undefined && !WORKFLOWS.has(plan.front.workflow)) {
+    report.errors.push(`${label}: workflow must be assisted or autonomous`)
+  }
+  for (const field of ['issue', 'risk-reassessment']) {
+    if (!isFilled(plan.front[field])) {
+      report.errors.push(`${label}: ${field} is required`)
+    }
+  }
+  const missing = PLAN_SECTIONS.filter((section) => !plan.sections.has(section))
+  if (missing.length > 0) {
+    report.errors.push(`${label} is missing the sections ${missing.join(', ')}`)
+  }
+  checkPlanStatus(plan, label, report)
+}
+
+const checkPlans = (projectDirectory, report) => {
+  const featuresPath = resolve(projectDirectory, FEATURES_DIRECTORY)
+  if (!existsSync(featuresPath)) {
+    return
+  }
+  const plans = readdirSync(featuresPath, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('_'))
+    .map((entry) => resolve(featuresPath, entry.name, 'plan.md'))
+    .filter((path) => existsSync(path))
+  for (const path of plans) {
+    checkPlan(path, projectDirectory, report)
+  }
+  report.planCount = plans.length
+}
+
 /**
  * Validates the project record and the exception register. `today` is
  * injectable so the expiry check is deterministic under test.
  */
 export const checkFoundation = ({ projectDirectory, today = new Date() }) => {
-  const report = { errors: [], warnings: [], exceptionCount: 0 }
+  const report = { errors: [], warnings: [], exceptionCount: 0, planCount: 0 }
   checkManifest(projectDirectory, report)
   checkExceptions(projectDirectory, toIsoDate(today), report)
+  checkPlans(projectDirectory, report)
   return report
 }
 
@@ -193,6 +301,9 @@ if (invokedDirectly) {
   if (report.errors.length > 0) {
     process.exitCode = 1
   } else {
-    process.stdout.write(`foundation record: ok (${String(report.exceptionCount)} exceptions)\n`)
+    process.stdout.write(
+      `foundation record: ok (${String(report.exceptionCount)} exceptions, `
+      + `${String(report.planCount)} plans)\n`,
+    )
   }
 }

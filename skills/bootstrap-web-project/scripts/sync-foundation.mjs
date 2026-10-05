@@ -41,8 +41,10 @@ const readRecord = (projectDirectory) => {
     }
     return JSON.parse(match[1])
   }
+  const level = /^ {2}level: "(R[123])"$/m.exec(record)
   return {
     ci: field('ci'),
+    securityLevel: level === null ? 'R2' : level[1],
     foundationVersion: field('foundationVersion'),
     profiles: field('profiles'),
     workspaces: field('workspaces'),
@@ -167,6 +169,7 @@ export const syncFoundation = ({ projectDirectory, apply = false }) => {
   const assets = renderFoundationAssets({
     appliedProfiles: record.profiles,
     ci: record.ci,
+    securityLevel: record.securityLevel,
     values,
     versions,
   })

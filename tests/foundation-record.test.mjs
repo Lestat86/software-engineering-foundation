@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import test, { afterEach, before } from 'node:test'
 
@@ -55,14 +55,14 @@ test('a generated project carries a valid record, an empty register and the requ
   assert.equal(requirements['CORE-DEBT-001'], 'MUST')
   assert.equal(requirements['CORE-CLARITY-001'], 'SHOULD')
 
-  assert.deepEqual(check(), { errors: [], warnings: [], exceptionCount: 0 })
+  assert.deepEqual(check(), { errors: [], warnings: [], exceptionCount: 0, planCount: 0 })
 
   const cli = spawnSync(process.execPath, ['.config/foundation/check-foundation.mjs'], {
     cwd: projectDirectory,
     encoding: 'utf8',
   })
   assert.equal(cli.status, 0, cli.stderr)
-  assert.match(cli.stdout, /^foundation record: ok \(0 exceptions\)$/m)
+  assert.match(cli.stdout, /^foundation record: ok \(0 exceptions, 0 plans\)$/m)
 
   const scripts = JSON.parse(read('package.json')).scripts
   assert.equal(
@@ -74,7 +74,10 @@ test('a generated project carries a valid record, an empty register and the requ
 
 test('an exception is valid until its expiry date and fails the gate afterwards', () => {
   write('docs/exceptions.yml', exceptionEntry({}))
-  assert.deepEqual(check(new Date('2026-12-31')), { errors: [], warnings: [], exceptionCount: 1 })
+  assert.deepEqual(
+    check(new Date('2026-12-31')),
+    { errors: [], warnings: [], exceptionCount: 1, planCount: 0 },
+  )
 
   const { errors } = check(new Date('2027-01-01'))
   assert.equal(errors.length, 1)
@@ -150,4 +153,62 @@ test('the generator records the selected workflow and rejects an unknown one', (
     }),
     /workflow must be assisted or autonomous/,
   )
+})
+
+test('a generated project carries the requirements, their index and the feature templates', () => {
+  for (const file of [
+    'docs/foundation/README.md',
+    'docs/foundation/standards/core.md',
+    'docs/foundation/security/r1-basic.md',
+    'docs/features/README.md',
+    'docs/features/_template/plan.md',
+    'docs/features/_template/spec.md',
+  ]) {
+    assert.ok(read(file).length > 0, file)
+  }
+  const index = read('docs/foundation/README.md')
+  assert.match(index, /^## Applicable to this project \(R1, fastify\)$/m)
+  assert.match(index.split('## Present for reference only')[0], /\[security\/r1-basic\.md\]/)
+  assert.match(index.split('## Present for reference only')[1], /\[stacks\/nest\.md\]/)
+})
+
+test('a plan is checked against its status: questions before work, criteria before done', (context) => {
+  const planPath = 'docs/features/search/plan.md'
+  mkdirSync(resolve(projectDirectory, 'docs/features/search'), { recursive: true })
+  context.after(() => rmSync(resolve(projectDirectory, 'docs/features/search'), { recursive: true }))
+  const template = read('docs/features/_template/plan.md')
+  const withStatus = (status, extra = {}) => {
+    let plan = template.replace(/^status: draft$/m, `status: ${status}`)
+    for (const [section, items] of Object.entries(extra)) {
+      plan = plan.replace(`## ${section}\n`, `## ${section}\n\n${items}\n`)
+    }
+    return plan
+  }
+
+  write(planPath, withStatus('draft'))
+  assert.deepEqual(check().errors, [], 'the template is a valid draft')
+  assert.equal(check().planCount, 1)
+
+  write(planPath, withStatus('ready', { 'Blocking questions': '- Which tracker owns refunds?' }))
+  assert.deepEqual(check().errors, [`${planPath} is ready with 1 open blocking questions`])
+
+  write(planPath, withStatus('done'))
+  assert.match(check().errors[0], /is done with an unsettled criterion: \[ \] <criterion> — auto: <test name>$/)
+
+  const settled = [
+    '- [x] Results are paged — auto: search.test.ts',
+    '- [ ] Screen reader announces results — manual: QA team',
+    '- [ ] Saved searches — deferred: #42',
+  ].join('\n')
+  write(planPath, withStatus('done').replace(/^- \[ \] <criterion> — auto: <test name>$/m, settled))
+  assert.deepEqual(check().errors, [])
+
+  write(planPath, withStatus('draft').replace('## Out of scope\n', '').replace(/^status: draft$/m, 'status: started'))
+  assert.deepEqual(check().errors, [
+    `${planPath}: status must be draft, ready, in-progress or done`,
+    `${planPath} is missing the sections Out of scope`,
+  ])
+
+  write(planPath, '# Plan without front matter\n')
+  assert.deepEqual(check().errors, [`${planPath} has no front matter`])
 })

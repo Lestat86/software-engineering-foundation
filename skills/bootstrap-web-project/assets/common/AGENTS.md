@@ -36,6 +36,12 @@ corepack yarn validate
 - Preserve or improve tests for changed behavior.
 {{ACCESSIBILITY_INVARIANTS}}
 
+Read `docs/foundation/README.md` for the foundation requirements that apply to
+this project, and review changes against them. Plan a feature that needs
+analysis in `docs/features/<slug>/plan.md` from `docs/features/_template/`,
+before implementing it, and keep its "Changes during implementation" section
+current while you work.
+
 Read `.engineering-foundation.yml` for the selected profiles and security
 classification. Apply the matching security profile and keep ASVS evidence
 versioned with the project. Record any intentional deviation from a MUST

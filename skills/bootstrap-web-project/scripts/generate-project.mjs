@@ -204,6 +204,66 @@ const listTemplateFiles = (sourceDirectory, targetDirectory) => {
 
 export const ASSET_RECORD_PATH = '.config/foundation/assets.json'
 const REQUIREMENTS_PATH = '.config/foundation/requirements.json'
+const REFERENCES_TARGET = 'docs/foundation'
+
+// Which references apply beyond the shared ones every project follows.
+const profileReferences = {
+  'fastify': ['stacks/fastify.md'],
+  'monorepo': ['monorepo.md'],
+  'nest': ['stacks/nest.md'],
+  'react-vite': ['stacks/react.md', 'accessibility.md', 'accessibility/testing.md',
+    'accessibility/wcag-22-aa-map.md'],
+  'supabase': ['stacks/supabase.md'],
+}
+const sharedReferences = [
+  'foundation.md',
+  'tooling.md',
+  'standards/core.md',
+  'standards/dependencies.md',
+  'standards/git-workflow.md',
+  'standards/project-record.md',
+  'standards/project-structure.md',
+  'standards/testing.md',
+  'standards/typescript.md',
+  'security/risk-classification.md',
+  'security/baseline.md',
+  'security/asvs.md',
+]
+
+/**
+ * The index of the copied references: which apply to this project and which
+ * are present only so that links between references resolve.
+ */
+const describeReferenceIndex = ({ appliedProfiles, ci, foundationVersion, securityLevel }) => {
+  const levelFile = { R1: 'r1-basic', R2: 'r2-standard', R3: 'r3-high' }[securityLevel]
+  const applicable = [
+    ...sharedReferences,
+    `security/${levelFile}.md`,
+    ...appliedProfiles.flatMap((profileName) => profileReferences[profileName] ?? []),
+    ...(ci === 'none' ? [] : [`${ci}-ci.md`]),
+  ]
+  const all = collectMarkdownFiles(referencesRoot)
+    .map((file) => relative(referencesRoot, file))
+    .sort()
+  const link = (file) => `- [${file}](${file})`
+  return [
+    '# Foundation requirements',
+    '',
+    `The requirements of Software Engineering Foundation ${foundationVersion}, copied`,
+    'here so that people and agents can review against them without the',
+    'foundation repository. `sync-foundation.mjs` keeps them in step with the',
+    'recorded foundation version; do not edit them here.',
+    '',
+    `## Applicable to this project (${securityLevel}, ${appliedProfiles.join(', ')})`,
+    '',
+    ...applicable.filter((file) => all.includes(file)).map(link),
+    '',
+    '## Present for reference only',
+    '',
+    ...all.filter((file) => !applicable.includes(file)).map(link),
+    '',
+  ].join('\n')
+}
 
 export const hashContent = (content) => createHash('sha256').update(content).digest('hex')
 
@@ -214,7 +274,13 @@ export const hashContent = (content) => createHash('sha256').update(content).dig
  * the project and are not listed. The generator and `sync-foundation.mjs` both
  * use this list, so an update produces exactly what a new project would get.
  */
-export const renderFoundationAssets = ({ appliedProfiles, ci, values, versions }) => {
+export const renderFoundationAssets = ({
+  appliedProfiles,
+  ci,
+  securityLevel,
+  values,
+  versions,
+}) => {
   const eslintModules = new Set(
     appliedProfiles.flatMap((profileName) => requireProfile(versions, profileName).eslintModules),
   )
@@ -229,6 +295,7 @@ export const renderFoundationAssets = ({ appliedProfiles, ci, values, versions }
     ...listTemplateFiles('tooling/architecture', ''),
     ...listTemplateFiles('common/.github', '.github'),
     ...listTemplateFiles('common/.gitlab', '.gitlab'),
+    ...listTemplateFiles('common/docs/features', 'docs/features'),
     { source: 'common/.editorconfig', target: '.editorconfig' },
     ...(ci === 'none' ? [] : listTemplateFiles(join('ci', ci), '')),
   ]
@@ -239,6 +306,21 @@ export const renderFoundationAssets = ({ appliedProfiles, ci, values, versions }
       mode: statSync(sourcePath).mode,
     }]
   }))
+  for (const file of collectMarkdownFiles(referencesRoot)) {
+    assets.set(join(REFERENCES_TARGET, relative(referencesRoot, file)), {
+      content: readFileSync(file, 'utf8'),
+      mode: statSync(file).mode,
+    })
+  }
+  assets.set(join(REFERENCES_TARGET, 'README.md'), {
+    content: describeReferenceIndex({
+      appliedProfiles,
+      ci,
+      foundationVersion: versions.foundationVersion,
+      securityLevel,
+    }),
+    mode: GENERATED_FILE_MODE,
+  })
   assets.set(REQUIREMENTS_PATH, {
     content: `${JSON.stringify(readRequirementLevels(), null, MANIFEST_INDENT_SPACES)}\n`,
     mode: GENERATED_FILE_MODE,
@@ -320,13 +402,26 @@ export const describeKnipIgnores = (appliedProfiles, scope) => {
 }
 
 /**
+ * References and their index are not templates: they are written from the
+ * rendering, which the asset record then checks like every other owned file.
+ */
+const writeReferenceAssets = (assets, targetDirectory) => {
+  for (const [path, { content, mode }] of assets) {
+    if (path.startsWith(`${REFERENCES_TARGET}/`)) {
+      mkdirSync(dirname(resolve(targetDirectory, path)), { recursive: true })
+      writeFileSync(resolve(targetDirectory, path), content)
+      chmodSync(resolve(targetDirectory, path), mode)
+    }
+  }
+}
+
+/**
  * Records what the foundation wrote, so a later synchronization can tell an
  * untouched asset from one the project changed. Each copied file must match its
  * rendering exactly, otherwise the record would be wrong from the start.
  */
-const writeAssetRecord = ({ appliedProfiles, ci, targetDirectory, values, versions }) => {
+const writeAssetRecord = ({ assets, targetDirectory, versions }) => {
   const hashes = {}
-  const assets = renderFoundationAssets({ appliedProfiles, ci, values, versions })
   for (const [path, { content }] of assets) {
     if (readFileSync(resolve(targetDirectory, path), 'utf8') !== content) {
       throw new Error(`generated ${path} differs from its foundation asset`)
@@ -563,7 +658,15 @@ export const generateProject = ({
   }
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, MANIFEST_INDENT_SPACES)}\n`)
 
-  writeAssetRecord({ appliedProfiles, ci, targetDirectory, values: rootValues, versions })
+  const assets = renderFoundationAssets({
+    appliedProfiles,
+    ci,
+    securityLevel,
+    values: rootValues,
+    versions,
+  })
+  writeReferenceAssets(assets, targetDirectory)
+  writeAssetRecord({ assets, targetDirectory, versions })
 
   return { targetDirectory, values, versions, appliedProfiles, workspaceMap }
 }

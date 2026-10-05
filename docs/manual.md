@@ -15,6 +15,7 @@ this manual explains how to work with them day to day.
 - [What is checked, and when](#what-is-checked-and-when)
 - [Before a pull request](#before-a-pull-request)
 - [When a check fails](#when-a-check-fails)
+- [Planning a feature](#planning-a-feature)
 - [Recording an exception](#recording-an-exception)
 - [Workflow modes](#workflow-modes)
 - [Updating a project to a new foundation version](#updating-a-project-to-a-new-foundation-version)
@@ -81,6 +82,8 @@ hooks are never installed into a parent repository.
 | `AGENTS.md` | Instructions for any coding agent working in the project. |
 | `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, workflow mode. |
 | `docs/exceptions.yml` | The register of exceptions to foundation requirements, empty at first. |
+| `docs/foundation/` | The foundation requirements, with `README.md` listing the ones that apply to this project. |
+| `docs/features/` | Feature plans and specifications, and their templates in `_template/`. |
 | `.config/eslint/` | The shared ESLint modules, composed by `eslint.config.mjs`. |
 | `.config/typescript/` | The shared strict TypeScript configurations. |
 | `.config/foundation/` | The record and exception checker and the list of known requirement identifiers. |
@@ -175,9 +178,30 @@ premerge: passed on 4c52ce0a…
 | Knip: unused file, export or dependency | Delete what nothing uses. For an export that is deliberate public API, add `/** @public */` above it. For a package used in a way Knip cannot see, add it to `ignoreDependencies` in `knip.config.js` with a comment saying how it is used. |
 | `premerge`: diff coverage below the minimum | Add tests for the listed `file:lines`, or remove the code if nothing needs it. |
 | `premerge`: base not found | `git fetch origin`, or set `FOUNDATION_BASE_REF` to the branch you will merge into. |
+| `lint:foundation`: plan with open blocking questions | Answer them, record the answers under "Decisions", empty the list, then move the status forward. |
+| `lint:foundation`: plan done with an unsettled criterion | Check it if verified, or mark it `manual: <who>` or `deferred: #<issue>`. |
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |
+
+## Planning a feature
+
+For work that needs analysis, write the plan before the code: copy
+`docs/features/_template/plan.md` to `docs/features/<slug>/plan.md`, and
+`spec.md` next to it for user interface work.
+
+The front matter carries the issue, the `status` and the security
+reassessment:
+
+| Status | Meaning | What `lint` requires |
+| --- | --- | --- |
+| `draft` | Under analysis. | Front matter and every section present. |
+| `ready` | Analysis complete. | No item left under "Blocking questions". |
+| `in-progress` | Being implemented. | Same as `ready`. |
+| `done` | Merged. | Every "Acceptance" item checked (`- [x]`), or marked `manual: <who>`, or `deferred: #<issue>`. |
+
+While implementing, record every divergence from the plan under "Changes
+during implementation": it is the first thing a reviewer reads.
 
 ## Recording an exception
 
