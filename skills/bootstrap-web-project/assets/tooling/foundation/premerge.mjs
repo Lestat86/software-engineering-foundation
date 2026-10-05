@@ -84,6 +84,52 @@ export const measureDiffCoverage = ({ changedLines, coverage, projectDirectory }
   return result
 }
 
+// Files that freeze existing violations during a retrofit. Each may shrink,
+// never grow: a new violation is fixed, not added to the baseline.
+const BASELINES = [
+  {
+    file: 'eslint-suppressions.json',
+    count: (suppressions) => Object.values(suppressions)
+      .flatMap((rules) => Object.values(rules))
+      .reduce((sum, { count }) => sum + count, 0),
+  },
+  {
+    file: '.dependency-cruiser-known-violations.json',
+    count: (violations) => violations.length,
+  },
+]
+
+/** Compares each baseline at HEAD with its version at the merge base. */
+export const measureBaselines = ({ mergeBase, projectDirectory, run }) => {
+  return BASELINES.flatMap(({ file, count }) => {
+    const path = resolve(projectDirectory, file)
+    if (!existsSync(path)) {
+      return []
+    }
+    const base = run('git', ['show', `${mergeBase}:${file}`], projectDirectory)
+    return [{
+      file,
+      before: base.status === 0 ? count(JSON.parse(base.stdout)) : undefined,
+      after: count(JSON.parse(readFileSync(path, 'utf8'))),
+    }]
+  })
+}
+
+const reportBaselines = (baselines, report) => {
+  for (const { file, before, after } of baselines) {
+    if (before === undefined) {
+      report.lines.push(`baseline ${file}: created with ${String(after)} entries`)
+    } else if (after > before) {
+      report.errors.push(
+        `baseline ${file} grew from ${String(before)} to ${String(after)}: `
+        + 'fix the new violations instead of adding them to the baseline',
+      )
+    } else {
+      report.lines.push(`baseline ${file}: ${String(before)} → ${String(after)}`)
+    }
+  }
+}
+
 const percentage = ({ covered, total }) => (total === 0 ? PERCENT : (covered / total) * PERCENT)
 
 const readCoverage = (projectDirectory, packageDirectories) => {
@@ -136,6 +182,10 @@ export const runPremerge = ({ projectDirectory, run = defaultRun, env = process.
     )
     return { ...report, head }
   }
+  reportBaselines(
+    measureBaselines({ mergeBase: mergeBase.stdout.trim(), projectDirectory, run }),
+    report,
+  )
   if (git(run, projectDirectory, ['status', '--porcelain']) !== '') {
     report.warnings.push(`uncommitted changes: the result does not describe commit ${head}`)
   }

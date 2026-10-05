@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { appendFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import test, { before } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
+  measureBaselines,
   measureDiffCoverage,
   parseChangedLines,
   runPremerge,
@@ -152,4 +153,26 @@ test('premerge reports a missing base and warns about uncommitted changes', () =
   writeFileSync(resolve(projectDirectory, 'NOTES.md'), 'draft\n')
   const dirty = runPremerge({ projectDirectory, run, env: { FOUNDATION_BASE_REF: 'main' } })
   assert.match(dirty.warnings[0], /^uncommitted changes: the result does not describe commit [0-9a-f]{40}$/)
+})
+
+test('baselines may shrink or be created, never grow', () => {
+  const baselineDirectory = clearGeneratedDirectory('premerge-baseline')
+  mkdirSync(baselineDirectory, { recursive: true })
+  const suppressions = (count) => JSON.stringify({ 'src/a.ts': { 'no-magic-numbers': { count } } })
+  const runWithBase = (stdout) => (command, args) => {
+    assert.deepEqual([command, args], ['git', ['show', 'base:eslint-suppressions.json']])
+    return stdout === undefined ? { status: 128, stdout: '' } : { status: 0, stdout }
+  }
+  const measure = (stdout) => measureBaselines({
+    mergeBase: 'base',
+    projectDirectory: baselineDirectory,
+    run: runWithBase(stdout),
+  })
+
+  assert.deepEqual(measure(suppressions(1)), [], 'no baseline file, nothing to compare')
+
+  writeFileSync(resolve(baselineDirectory, 'eslint-suppressions.json'), suppressions(2))
+  assert.deepEqual(measure(undefined), [{ file: 'eslint-suppressions.json', before: undefined, after: 2 }])
+  assert.deepEqual(measure(suppressions(3)), [{ file: 'eslint-suppressions.json', before: 3, after: 2 }])
+  assert.deepEqual(measure(suppressions(1)), [{ file: 'eslint-suppressions.json', before: 1, after: 2 }])
 })

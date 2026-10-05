@@ -73,6 +73,8 @@ Next.js is intentionally outside the initial scope.
 - Claude Code users install the `sef` plugin from this repository:
   `/plugin marketplace add <this repository>`, then
   `/plugin install sef@software-engineering-foundation`.
+- Adopting the foundation in an existing project starts at
+  [`skills/retrofit-project/SKILL.md`](skills/retrofit-project/SKILL.md).
 - People creating or maintaining a project start at the
   [user manual](docs/manual.md).
 - Agents bootstrapping a project start at

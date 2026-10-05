@@ -19,6 +19,7 @@ this manual explains how to work with them day to day.
 - [Recording an exception](#recording-an-exception)
 - [Workflow modes](#workflow-modes)
 - [Using the Claude Code plugin](#using-the-claude-code-plugin)
+- [Retrofitting an existing project](#retrofitting-an-existing-project)
 - [Updating a project to a new foundation version](#updating-a-project-to-a-new-foundation-version)
 - [Further reading](#further-reading)
 
@@ -187,6 +188,8 @@ premerge: passed on 4c52ce0a…
 | Fastify: `must declare a response schema`, `a params schema` or `a body schema` | Add the zod schema to the route's `schema` option. For a streaming or proxy route that cannot have a body schema, set `config: { contractException: 'why, and how the payload is bounded' }`. |
 | Knip: unused file, export or dependency | Delete what nothing uses. For an export that is deliberate public API, add `/** @public */` above it. For a package used in a way Knip cannot see, add it to `ignoreDependencies` in `knip.config.js` with a comment saying how it is used. |
 | `premerge`: diff coverage below the minimum | Add tests for the listed `file:lines`, or remove the code if nothing needs it. |
+| `premerge`: baseline grew | Fix the new violations; never re-run `--suppress-all` to hide them. |
+| ESLint: suppressions left that do not occur anymore | Good news: run `corepack yarn eslint . --prune-suppressions` and commit the smaller baseline. |
 | `premerge`: base not found | `git fetch origin`, or set `FOUNDATION_BASE_REF` to the branch you will merge into. |
 | `lint:foundation`: plan with open blocking questions | Answer them, record the answers under "Decisions", empty the list, then move the status forward. |
 | `lint:foundation`: plan done with an unsettled criterion | Check it if verified, or mark it `manual: <who>` or `deferred: #<issue>`. |
@@ -256,6 +259,7 @@ The `sef` plugin adds:
 | `/sef:bootstrap-web-project` | Create a project, as described above. |
 | `/sef:review` | Review the current branch before a pull request. |
 | `/sef:record-exception` | Prepare an entry in `docs/exceptions.yml` for a deliberate deviation. |
+| `/sef:retrofit-project` | Bring an existing project onto the foundation in waves; see [Retrofitting an existing project](#retrofitting-an-existing-project). |
 | `sef:foundation-reviewer` agent | Started by `/sef:review`; reviews the diff against the plan and the requirements. |
 | Hook before every shell command | Blocks `git commit --no-verify`, `git commit -n`, `HUSKY=0 git …` and `--no-verify` on push, merge and rebase. |
 | Hook when the agent stops | Runs `corepack yarn validate` if the code changed since it last passed, and sends failures back to the agent. |
@@ -281,6 +285,34 @@ the code. After two blocks on the same unchanged failure it lets the agent
 stop, so a failure the agent cannot fix comes back to you instead of looping.
 Set `SEF_STOP_GATE=off` to disable it for a session, or
 `SEF_STOP_GATE_COMMAND="corepack yarn lint"` to run a faster check.
+
+## Retrofitting an existing project
+
+An existing project adopts the foundation in waves of small pull requests,
+never in one change. Start with a read-only inventory:
+
+```sh
+node <foundation>/skills/retrofit-project/scripts/inventory-project.mjs --target <dir>
+```
+
+It reports the stack, package manager, ESLint configuration, hooks, CI,
+TypeScript flags, suppressions, debt markers and suspicious tracked files, each
+mapped to a requirement. With the plugin, `/sef:retrofit-project` runs the
+whole process: risk classification, gap assessment in
+`docs/foundation/retrofit-assessment.md`, and one plan per pull request:
+
+1. **Wave 0**: Yarn Modern, a one-off scan of the Git history for secrets, the
+   foundation files through `sync-foundation.mjs`, and the scripts and hooks.
+2. **Wave 1**: the remaining checks, with existing violations frozen in
+   baselines (`eslint-suppressions.json`, dependency-cruiser known violations).
+3. **Wave 2**: mechanical fixes in separate commits.
+4. **Wave 3**: the security controls the classified level requires.
+5. **Wave 4**: burning the baselines down.
+
+`premerge` fails when a baseline has more entries than at the merge base: fix
+a new violation instead of suppressing it. ESLint itself fails when a
+suppression no longer matches anything; run
+`corepack yarn eslint . --prune-suppressions` to shrink the baseline.
 
 ## Updating a project to a new foundation version
 

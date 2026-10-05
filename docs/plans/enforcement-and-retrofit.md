@@ -97,10 +97,11 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | `sync-foundation` | ✅ fatto | `feat/sync-foundation` | 0019 |
 | Fase 2 — requisiti nel progetto, template di piano | ✅ fatto | `feat/project-knowledge` | 0020 |
 | Fase 3 — plugin e revisore | ✅ fatto | `feat/claude-plugin` | 0021 |
-| Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
+| Fase 4 — skill `retrofit-project`, inventario, baseline | ✅ fatto | `feat/retrofit-skill` | 0022 |
+| Fase 4 — applicazione al pilota AntiPhishing-Bot | ⏸️ rinviata (decisione 2026-10-05) | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/claude-plugin`.
+`feat/retrofit-skill`; tutti i branch sono pushati sul fork.
 
 Decisioni prese durante il lavoro:
 
@@ -151,6 +152,14 @@ Decisioni prese durante il lavoro:
 - **Stop hook con limite:** il campo `stop_hook_active` non è garantito dalla
   documentazione, quindi dopo 2 blocchi sullo stesso stato del codice l'hook
   lascia fermare l'agente invece di bloccarlo all'infinito.
+- **Retrofit:** l'adozione dei file SEF passa da `sync-foundation`, che
+  gestisce già i progetti senza registro; la baseline ESLint usa le bulk
+  suppressions native (ESLint fallisce da solo sulle soppressioni non più
+  necessarie, quindi la baseline scende), e `premerge` impedisce che cresca.
+  L'inventario su AntiPhishing-Bot (eseguito in sola lettura come prova)
+  conferma i segnali dell'analisi manuale: Yarn 1, `typecheck` e `npx` nel
+  pre-commit, nessuna CI, `noUncheckedIndexedAccess` assente, 1 soppressione,
+  1 TODO non tracciato, un `.tgz` in `vendor/`.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).

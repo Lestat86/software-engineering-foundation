@@ -159,7 +159,9 @@ The coverage step works as follows:
    statement ran. Files outside the coverage scope of the test configuration,
    such as tests and entry points, are not measured.
 4. The gate fails below `premerge.diffCoverage` and lists the uncovered
-   lines. It warns when the working tree has uncommitted changes, because the
+   lines. It also fails when `eslint-suppressions.json` or
+   `.dependency-cruiser-known-violations.json`, the baselines of a retrofitted
+   project, has more entries than at the merge base. It warns when the working tree has uncommitted changes, because the
    result then does not describe the commit it reports.
 
 The last line, `premerge: passed on <sha>`, is the value the pull request
