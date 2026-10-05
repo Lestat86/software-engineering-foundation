@@ -22,7 +22,8 @@ Fastify, Nest, Supabase and full-stack monorepo profiles and the optional
 GitLab CI baseline are established. Every template is verified on each test run
 by generating a project and running its lint, typecheck, tests and build. The
 lint gate also checks secrets, tracked debt, described suppressions, bounded
-complexity, the project record and the exception register. The
+complexity, dependency classes, workspace boundaries, the project record and
+the exception register. The
 first stable release follows the end-to-end validation of generated projects.
 
 ## Supported scope
@@ -59,6 +60,8 @@ Next.js is intentionally outside the initial scope.
 - Every lint suppression names its rules and states a reason.
 - Cognitive complexity is bounded at 15 per function and nesting at four
   levels.
+- Production code never imports development dependencies, and client, server
+  and shared packages keep their boundaries; `lint` checks both.
 - Every project records its workflow mode, `assisted` or `autonomous`, and its
   exceptions in an expiring register checked by `lint`.
 

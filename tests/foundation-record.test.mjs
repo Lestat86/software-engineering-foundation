@@ -65,7 +65,10 @@ test('a generated project carries a valid record, an empty register and the requ
   assert.match(cli.stdout, /^foundation record: ok \(0 exceptions\)$/m)
 
   const scripts = JSON.parse(read('package.json')).scripts
-  assert.equal(scripts.lint, 'yarn lint:foundation && yarn lint:code && yarn lint:secrets')
+  assert.equal(
+    scripts.lint,
+    'yarn lint:foundation && yarn lint:code && yarn lint:deps && yarn lint:secrets',
+  )
   assert.equal(scripts['lint:foundation'], 'node .config/foundation/check-foundation.mjs')
 })
 

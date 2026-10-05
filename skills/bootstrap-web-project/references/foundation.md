@@ -28,7 +28,8 @@ by `.config/foundation/check-foundation.mjs` as defined in the
 
 Every generated project exposes consistent Yarn scripts for:
 
-- `lint`, which runs `lint:foundation`, `lint:code` and `lint:secrets`
+- `lint`, which runs `lint:foundation`, `lint:code`, `lint:deps` and
+  `lint:secrets`
 - `lint:fix`
 - `typecheck`
 - `test`

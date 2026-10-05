@@ -47,6 +47,7 @@ test('the generated React + Vite project is complete and fully resolved', () => 
     '.husky/commit-msg',
     '.husky/pre-commit',
     '.secretlintrc.json',
+    '.dependency-cruiser.mjs',
     '.node-version',
     '.yarnrc.yml',
     'AGENTS.md',
@@ -97,6 +98,7 @@ test('the generated React + Vite project is complete and fully resolved', () => 
 
 test('the generated project passes the shared lint gate', () => {
   assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
+  assert.doesNotThrow(() => run(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.']))
 })
 
 test('the generated project typechecks its application and Node configuration', () => {

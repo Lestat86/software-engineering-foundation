@@ -75,6 +75,7 @@ test('the generated Nest project is complete and fully resolved', () => {
 
 test('the generated Nest project passes the shared lint gate', () => {
   assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
+  assert.doesNotThrow(() => run(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.']))
 })
 
 test('the generated Nest project typechecks', () => {

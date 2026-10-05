@@ -147,6 +147,7 @@ test('shared tooling assets are complete and never introduce Prettier or npx', (
     'git/commitlint.config.mjs',
     'git/lint-staged.config.mjs',
     'git/.secretlintrc.json',
+    'architecture/.dependency-cruiser.mjs',
     'git/.husky/pre-commit',
     'git/.husky/commit-msg',
   ]

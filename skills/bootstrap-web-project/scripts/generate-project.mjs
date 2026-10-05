@@ -28,6 +28,7 @@ const appendableFiles = new Set(['.gitignore', '.env.example'])
 const rootOnlyScripts = new Set([
   'lint',
   'lint:code',
+  'lint:deps',
   'lint:fix',
   'lint:foundation',
   'lint:secrets',
@@ -399,6 +400,7 @@ export const generateProject = ({
     rootValues,
   )
   copyTemplateTree(resolve(assetsRoot, 'tooling/git'), targetDirectory, rootValues)
+  copyTemplateTree(resolve(assetsRoot, 'tooling/architecture'), targetDirectory, rootValues)
   copyTemplateTree(
     resolve(assetsRoot, 'tooling/foundation'),
     resolve(targetDirectory, '.config/foundation'),

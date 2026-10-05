@@ -41,6 +41,7 @@ test('the generated Fastify project is complete and fully resolved', () => {
     '.engineering-foundation.yml',
     '.husky/pre-commit',
     '.secretlintrc.json',
+    '.dependency-cruiser.mjs',
     'eslint.config.mjs',
     'src/app.ts',
     'src/config.constants.ts',
@@ -81,6 +82,7 @@ test('the generated Fastify project is complete and fully resolved', () => {
 
 test('the generated Fastify project passes the shared lint gate', () => {
   assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
+  assert.doesNotThrow(() => run(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.']))
 })
 
 test('the generated Fastify project scans committable files for secrets without printing them', async (context) => {

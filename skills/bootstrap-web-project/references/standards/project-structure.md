@@ -43,8 +43,10 @@
   dependencies.
 - **Rationale:** Stable boundaries allow internals to evolve independently and
   prevent accidental coupling.
-- **Verification:** ESLint and workspace checks reject restricted imports and
-  cycles; review package exports and feature entrypoints.
+- **Verification:** `import/no-cycle` in ESLint rejects cycles; the
+  `lint:deps` dependency-cruiser rules reject imports between the client and
+  server applications and unresolvable imports; review package exports and
+  feature entrypoints.
 - **Sources:** [Node.js package entry points](https://nodejs.org/api/packages.html#package-entry-points), practitioner experience with workspace boundaries.
 - **Exceptions:** Tests may access a private seam only when no public behavior
   can expose the required invariant; record why.
@@ -59,8 +61,9 @@
   contracts contain portable types and schemas, not runtime-specific internals.
 - **Rationale:** Premature sharing creates a dependency hub and couples otherwise
   independent features.
-- **Verification:** Identify each shared module's consumers and ensure it does
-  not import from a consuming application.
+- **Verification:** The `no-package-to-app` dependency-cruiser rule in
+  `lint:deps` rejects an import from a workspace package into an application;
+  review each shared module's consumers.
 - **Sources:** Practitioner experience with shared workspace packages.
 - **Exceptions:** A stable cross-application contract may be established before
   its second consumer when that consumer is part of an approved near-term plan.

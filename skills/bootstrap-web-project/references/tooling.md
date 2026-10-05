@@ -97,8 +97,9 @@ public names:
 
 ```json
 {
-  "lint": "yarn lint:foundation && yarn lint:code && yarn lint:secrets",
+  "lint": "yarn lint:foundation && yarn lint:code && yarn lint:deps && yarn lint:secrets",
   "lint:code": "eslint . --max-warnings=0",
+  "lint:deps": "depcruise --config .dependency-cruiser.mjs .",
   "lint:fix": "eslint . --fix --max-warnings=0",
   "lint:foundation": "node .config/foundation/check-foundation.mjs",
   "lint:secrets": "secretlint --secretlintignore .gitignore \"**/*\"",
@@ -112,6 +113,27 @@ public names:
 and TypeScript files, and `secretlint` for every staged file. The pre-commit
 hook does not run repository-wide typechecking or tests. The complete gate runs
 explicitly before merge and in CI when CI is enabled.
+
+## Dependency rules
+
+`.dependency-cruiser.mjs`, run by `lint:deps`, checks what ESLint cannot see
+from one file at a time:
+
+- `not-to-dev-dep`, `no-non-package-json` and `no-duplicate-dep-types` keep
+  dependency classes correct for [`DEP-MINIMAL-001`](standards/dependencies.md):
+  production code under `src/` never imports a development dependency, every
+  imported package is declared, and no package is declared twice.
+- `no-client-to-server`, `no-server-to-client` and `no-package-to-app` enforce
+  the workspace boundaries of [`STRUCT-BOUNDARY-001`](standards/project-structure.md)
+  and [`STRUCT-SHARED-001`](standards/project-structure.md) in a monorepo. They
+  match nothing in a single-package project.
+- `not-to-unresolvable` rejects an import that does not resolve. Workspace
+  packages under the project scope are exempt: they resolve to build output
+  that does not exist before the build, and the typecheck verifies them.
+
+Cycles stay with `import/no-cycle` in ESLint, which reports them in the editor
+and at commit. Add project-specific boundaries, such as a feature that must not
+import another feature's internals, as further `forbidden` entries.
 
 ## Secret scanning
 

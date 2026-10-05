@@ -87,7 +87,7 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 1.1 — debito, soppressioni, complessità, SonarJS | ✅ fatto | `d0cda4d` | 0012 |
 | Fase 1.2 — secretlint | ✅ fatto | `ec44d3c` | 0013 |
 | Fase 1.3 — validatori di manifest ed eccezioni, flag `workflow` | ✅ fatto | `19dd0ce` | 0014 |
-| Fase 1.4 — dependency-cruiser | ◐ in corso | — | — |
+| Fase 1.4 — dependency-cruiser | ✅ fatto | `feat/dependency-boundaries` | 0015 |
 | Fase 1.5 — test sugli schemi delle route Fastify | ☐ | — | — |
 | Fase 1b — `yarn premerge` e template PR/MR | ☐ | — | — |
 | `sync-foundation` | ☐ | — | — |
@@ -96,7 +96,7 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/foundation-validators`.
+`feat/dependency-boundaries`.
 
 Decisioni prese durante il lavoro:
 
@@ -113,6 +113,9 @@ Decisioni prese durante il lavoro:
   si sopprime con motivazione, che documenta la revisione.
 - **Script `lint` diviso** in `lint:foundation`, `lint:code` e `lint:secrets`;
   `lint` li esegue tutti, quindi `validate` e la CI li coprono.
+- **Cicli solo in ESLint:** dependency-cruiser non ripete `no-circular`, già
+  coperto da `import/no-cycle`; si occupa di classi di dipendenza e confini
+  tra workspace.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).
