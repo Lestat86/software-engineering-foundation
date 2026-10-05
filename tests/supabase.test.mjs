@@ -92,5 +92,5 @@ test('every migrated table enables RLS with explicit grants and policies', () =>
 })
 
 test('the base profile still passes lint with the overlay applied', () => {
-  run(binary('eslint'), ['.', '--max-warnings=0'])
+  assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
 })

@@ -147,10 +147,40 @@ and everything under `.config/`. The arrow requirement stays on in all of them.
 Extend the exempt globs through the `literalExemptFiles` option, spreading the
 exported `defaultLiteralExemptFiles` so the shared entries survive.
 
+## Code health baseline
+
+`base.mjs` exports `codeHealthConfigs` and `codeHealthRules`, which both the
+JavaScript and the TypeScript configuration apply to every source file.
+
+- For [`CORE-SUPPRESS-001`](standards/core.md), the
+  `@eslint-community/eslint-comments` recommended rules and `require-description`
+  reject a disable directive without named rules or without a reason after
+  `--`. `reportUnusedDisableDirectives` already rejects stale directives.
+- For [`CORE-DEBT-001`](standards/core.md), the local
+  `foundation/todo-issue-reference` rule rejects a `TODO` or `FIXME` that does
+  not reference an issue as `TODO(#123)`, and `sonarjs/no-commented-code`
+  rejects commented-out code. A project with another tracker passes its
+  reference pattern as the rule option, for example
+  `['error', { reference: '[A-Z]+-\\d+' }]`. The SonarJS `todo-tag` and
+  `fixme-tag` rules are off because they reject tracked markers too.
+- For [`CORE-COMPLEXITY-001`](standards/core.md),
+  `sonarjs/cognitive-complexity` allows 15 per function and `max-depth` allows
+  four nested blocks.
+- The SonarJS recommended rules add bug-pattern, security-hotspot and
+  code-smell checks. Its settings are not applied, so they cannot override the
+  React version detection. In TypeScript files `sonarjs/null-dereference` is
+  off: it ignores types, and `strictNullChecks` proves nullability exactly.
+
+A security-hotspot rule such as `sonarjs/no-os-command-from-path` marks code to
+review, not necessarily a defect. When the reviewed code is correct, keep the
+rule and suppress the single site with its reason, as `CORE-SUPPRESS-001`
+requires; the suppression records that the hotspot was reviewed.
+
 ## Deliberate boundaries
 
-The preset enforces typed linting, promise safety, documented TypeScript
-suppressions, import validity, React Hooks and strict JSX accessibility. It does
+The preset enforces typed linting, promise safety, documented TypeScript and
+ESLint suppressions, tracked debt markers, bounded complexity, import validity,
+React Hooks and strict JSX accessibility. It does
 not prescribe domain naming prefixes, file-per-type organization, universal
 named exports, class bans, inline-handler bans or coverage percentages.
 

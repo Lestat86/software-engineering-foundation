@@ -20,6 +20,7 @@ if (!existsSync(target) || !statSync(target).isDirectory()) {
 const targetRoot = realpathSync(target)
 
 const runGit = (arguments_, { allowFailure = false } = {}) => {
+  // eslint-disable-next-line sonarjs/no-os-command-from-path -- Git from the user's PATH by design
   const result = spawnSync('git', arguments_, {
     cwd: targetRoot,
     encoding: 'utf8',

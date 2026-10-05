@@ -74,11 +74,11 @@ test('the generated Nest project is complete and fully resolved', () => {
 })
 
 test('the generated Nest project passes the shared lint gate', () => {
-  run(binary('eslint'), ['.', '--max-warnings=0'])
+  assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
 })
 
 test('the generated Nest project typechecks', () => {
-  run(binary('tsc'), ['-p', 'tsconfig.json'])
+  assert.doesNotThrow(() => run(binary('tsc'), ['-p', 'tsconfig.json']))
 })
 
 test('the generated Nest tests cover validation, throttling and the error contract', () => {

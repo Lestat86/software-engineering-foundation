@@ -26,6 +26,11 @@ corepack yarn validate
   required hoisting.
 - Declare meaningful numeric literals as `UPPER_SNAKE_CASE` exports of a
   `<feature>.constants.ts` module colocated with the feature.
+- Delete dead code instead of commenting it out; every `TODO` or `FIXME`
+  references its issue, as in `TODO(#123)`.
+- Give every ESLint disable directive the rules it disables and a reason after
+  `--`, on the narrowest scope; split complex functions instead of
+  suppressing the complexity check.
 - Never commit, print or log secrets and authentication material.
 - Validate external input at the appropriate trust boundary.
 - Preserve or improve tests for changed behavior.

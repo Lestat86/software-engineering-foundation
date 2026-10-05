@@ -1,8 +1,85 @@
+import comments from '@eslint-community/eslint-plugin-eslint-comments/configs'
 import eslint from '@eslint/js'
 import importPlugin from 'eslint-plugin-import'
+import sonarjs from 'eslint-plugin-sonarjs'
 import { defineConfig } from 'eslint/config'
 
 const defaultJavaScriptFiles = ['**/*.{js,mjs,cjs}']
+
+// CORE-DEBT-001: a debt marker names the issue that tracks it. The default
+// accepts a GitLab-style reference such as `TODO(#123)`; a project using another
+// tracker passes its own pattern as the rule option.
+export const defaultIssueReference = '#\\d+'
+
+const todoIssueReferenceRule = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description: 'Require debt markers to reference the issue that tracks them.',
+    },
+    schema: [
+      {
+        type: 'object',
+        properties: { reference: { type: 'string' } },
+        additionalProperties: false,
+      },
+    ],
+    messages: {
+      missingReference:
+        '{{marker}} must reference the issue that tracks it, for example {{marker}}(#123).',
+    },
+  },
+  create: (context) => {
+    const reference = context.options[0]?.reference ?? defaultIssueReference
+    const marker = new RegExp(String.raw`\b(TODO|FIXME)\b(?!\(${reference}\))`, 'g')
+
+    return {
+      Program: () => {
+        for (const comment of context.sourceCode.getAllComments()) {
+          for (const match of comment.value.matchAll(marker)) {
+            context.report({
+              loc: comment.loc,
+              messageId: 'missingReference',
+              data: { marker: match[1] },
+            })
+          }
+        }
+      },
+    }
+  },
+}
+
+export const foundationPlugin = {
+  meta: { name: 'foundation' },
+  rules: { 'todo-issue-reference': todoIssueReferenceRule },
+}
+
+// Shared by the JavaScript and TypeScript configurations. The SonarJS settings
+// are left out so they cannot override the React version detection.
+export const codeHealthConfigs = [
+  comments.recommended,
+  {
+    name: 'foundation/code-health',
+    plugins: { foundation: foundationPlugin, sonarjs },
+    rules: sonarjs.configs.recommended.rules,
+  },
+]
+
+// CORE-SUPPRESS-001, CORE-DEBT-001 and CORE-COMPLEXITY-001. The SonarJS marker
+// rules are replaced by the issue-reference rule, which accepts tracked debt
+// instead of rejecting every marker.
+export const codeHealthRules = {
+  '@eslint-community/eslint-comments/require-description': [
+    'error',
+    { ignore: ['eslint-enable'] },
+  ],
+  'foundation/todo-issue-reference': 'error',
+  'max-depth': ['error', 4],
+  'sonarjs/cognitive-complexity': ['error', 15],
+  'sonarjs/fixme-tag': 'off',
+  'sonarjs/no-commented-code': 'error',
+  'sonarjs/todo-tag': 'off',
+}
 
 // Numeric literals stay readable in files that are themselves declarations of
 // values (tool configuration) or the specification of a behavior (tests).
@@ -65,6 +142,7 @@ export const createJavaScriptConfig = ({
     extends: [
       eslint.configs.recommended,
       importPlugin.flatConfigs.recommended,
+      ...codeHealthConfigs,
     ],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -82,6 +160,7 @@ export const createJavaScriptConfig = ({
     },
     rules: {
       ...arrowFunctionRules,
+      ...codeHealthRules,
       'array-callback-return': ['error', { checkForEach: true }],
       'curly': ['error', 'all'],
       'eqeqeq': ['error', 'always'],

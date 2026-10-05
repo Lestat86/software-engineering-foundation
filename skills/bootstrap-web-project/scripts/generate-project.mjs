@@ -172,6 +172,32 @@ const collectGroups = (versions, groupNames) => {
 }
 
 /**
+ * Resolves the workspace profiles of a monorepo profile, adding them to the
+ * applied profiles and mapping each workspace directory to its profile.
+ */
+const describeMonorepoWorkspaces = ({
+  appliedProfiles,
+  profile,
+  versions,
+  workspaceMap,
+  workspaces,
+}) => {
+  for (const workspaceName of Object.keys(profile.workspaces)) {
+    if (workspaceName !== 'shared' && !(workspaceName in workspaces)) {
+      throw new Error(`the monorepo profile requires a ${workspaceName} workspace profile`)
+    }
+  }
+  for (const [workspaceName, workspaceProfileName] of Object.entries({
+    ...workspaces,
+    shared: profile.sharedProfile,
+  })) {
+    requireProfile(versions, workspaceProfileName)
+    appliedProfiles.push(workspaceProfileName)
+    workspaceMap[profile.workspaces[workspaceName]] = workspaceProfileName
+  }
+}
+
+/**
  * Lists every profile the generation applies, in application order, and maps
  * each workspace directory to its profile so the project manifest records the
  * complete composition rather than only the root profiles.
@@ -192,22 +218,7 @@ const describeComposition = (versions, profiles, workspaces) => {
     appliedProfiles.push(profileName)
 
     if (profile.layout === 'monorepo') {
-      for (const workspaceName of Object.keys(profile.workspaces)) {
-        if (workspaceName === 'shared') {
-          continue
-        }
-        if (!(workspaceName in workspaces)) {
-          throw new Error(`the monorepo profile requires a ${workspaceName} workspace profile`)
-        }
-      }
-      for (const [workspaceName, workspaceProfileName] of Object.entries({
-        ...workspaces,
-        shared: profile.sharedProfile,
-      })) {
-        requireProfile(versions, workspaceProfileName)
-        appliedProfiles.push(workspaceProfileName)
-        workspaceMap[profile.workspaces[workspaceName]] = workspaceProfileName
-      }
+      describeMonorepoWorkspaces({ appliedProfiles, profile, versions, workspaceMap, workspaces })
     }
   }
 

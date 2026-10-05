@@ -3,7 +3,12 @@ import importPlugin from 'eslint-plugin-import'
 import { defineConfig } from 'eslint/config'
 import tseslint from 'typescript-eslint'
 
-import { arrowFunctionRules, magicNumberOptions } from './base.mjs'
+import {
+  arrowFunctionRules,
+  codeHealthConfigs,
+  codeHealthRules,
+  magicNumberOptions,
+} from './base.mjs'
 
 const defaultTypeScriptFiles = ['**/*.{ts,tsx,mts,cts}']
 
@@ -37,6 +42,7 @@ export const createTypeScriptConfig = ({
         ...tseslint.configs.stylisticTypeChecked,
         importPlugin.flatConfigs.recommended,
         importPlugin.flatConfigs.typescript,
+        ...codeHealthConfigs,
       ],
       languageOptions: {
         parserOptions: {
@@ -56,6 +62,7 @@ export const createTypeScriptConfig = ({
       },
       rules: {
         ...arrowFunctionRules,
+        ...codeHealthRules,
         'import/first': 'error',
         'import/newline-after-import': 'error',
         'import/no-cycle': ['error', { ignoreExternal: true }],
@@ -89,6 +96,9 @@ export const createTypeScriptConfig = ({
         '@typescript-eslint/no-unnecessary-type-assertion': 'error',
         '@typescript-eslint/return-await': ['error', 'in-try-catch'],
         '@typescript-eslint/switch-exhaustiveness-check': 'error',
+        // `strictNullChecks` proves nullability from the types; the SonarJS
+        // rule ignores them and reports typed values such as a `string`.
+        'sonarjs/null-dereference': 'off',
         '@typescript-eslint/ban-ts-comment': [
           'error',
           {

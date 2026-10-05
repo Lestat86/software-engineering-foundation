@@ -79,11 +79,11 @@ test('the generated Fastify project is complete and fully resolved', () => {
 })
 
 test('the generated Fastify project passes the shared lint gate', () => {
-  run(binary('eslint'), ['.', '--max-warnings=0'])
+  assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
 })
 
 test('the generated Fastify project typechecks', () => {
-  run(binary('tsc'), ['-p', 'tsconfig.json'])
+  assert.doesNotThrow(() => run(binary('tsc'), ['-p', 'tsconfig.json']))
 })
 
 test('the generated Fastify tests cover validation, limits and the error contract', () => {

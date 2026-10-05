@@ -4,7 +4,9 @@ import { dirname, resolve } from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
 
-import { ESLint } from 'eslint'
+import { ESLint, Linter } from 'eslint'
+
+import { foundationPlugin } from '../skills/bootstrap-web-project/assets/tooling/eslint/base.mjs'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const skillPath = resolve(
@@ -46,7 +48,7 @@ test('the bootstrap skill passes the portable skill-creator metadata contract', 
       .split('\n')
       .filter((line) => line.trim() !== '' && !/^\s/.test(line))
       .map((line) => {
-        const property = line.match(/^([a-z][a-z-]*):(?:\s+(.*))?$/)
+        const property = line.match(/^([a-z][a-z-]*):(?: +(\S.*))?$/)
         assert.ok(property, `invalid top-level frontmatter line: ${line}`)
         return [property[1], property[2] ?? '']
       }),
@@ -95,6 +97,7 @@ test('every relative Markdown link in the skill and its references resolves', ()
     visited.add(documentPath)
 
     const document = readFileSync(documentPath, 'utf8')
+    // eslint-disable-next-line sonarjs/super-linear-regex -- trusted repository Markdown
     const links = [...document.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)]
       .map((match) => match[1])
       .filter((target) => !target.includes('://'))
@@ -290,6 +293,52 @@ test('the representative ESLint composition enables typed and accessibility rule
     assert.equal(result.errorCount, 0, `unexpected error in ${result.filePath}`)
     assert.equal(result.warningCount, 0, `unexpected warning in ${result.filePath}`)
   }
+})
+
+test('the code health rules reject untracked debt, undescribed suppressions and complexity', async () => {
+  const fixturePath = resolve(repositoryRoot, 'tests/fixtures/tooling')
+  const eslint = new ESLint({
+    cwd: fixturePath,
+    overrideConfigFile: resolve(fixturePath, 'eslint.config.mjs'),
+  })
+  const [result] = await eslint.lintFiles([resolve(fixturePath, 'src/invalid-health.ts')])
+  const reportedRules = result.messages.map(({ ruleId }) => ruleId)
+  const expectations = [
+    ['foundation/todo-issue-reference', 'CORE-DEBT-001 to reject a TODO and a FIXME without issue', 2],
+    ['sonarjs/no-commented-code', 'CORE-DEBT-001 to reject commented-out code', 1],
+    [
+      '@eslint-community/eslint-comments/require-description',
+      'CORE-SUPPRESS-001 to reject a directive without a reason',
+      1,
+    ],
+    ['sonarjs/cognitive-complexity', 'CORE-COMPLEXITY-001 to bound cognitive complexity', 1],
+    ['max-depth', 'CORE-COMPLEXITY-001 to bound nesting', 1],
+  ]
+
+  for (const [ruleId, expectation, count] of expectations) {
+    assert.equal(
+      reportedRules.filter((reported) => reported === ruleId).length,
+      count,
+      `expected ${expectation}`,
+    )
+  }
+})
+
+test('the debt marker rule accepts a project-specific issue reference', () => {
+  const linter = new Linter({ configType: 'flat' })
+  const config = [
+    {
+      plugins: { foundation: foundationPlugin },
+      rules: { 'foundation/todo-issue-reference': ['error', { reference: '[A-Z]+-\\d+' }] },
+    },
+  ]
+  const ruleIds = (code) => linter.verify(code, config).map(({ ruleId }) => ruleId)
+
+  assert.deepEqual(ruleIds('// TODO(PROJ-42): tracked in the project tracker\n'), [])
+  assert.deepEqual(ruleIds('// TODO(#42): wrong tracker for this project\n'), [
+    'foundation/todo-issue-reference',
+  ])
+  assert.deepEqual(ruleIds('// a todo in prose is not a marker\n'), [])
 })
 
 test('numeric literals stay readable in tests and tool configuration', async () => {

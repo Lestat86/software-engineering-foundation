@@ -144,16 +144,64 @@ must not weaken this baseline.
 
 ## `CORE-DEBT-001` — visible and actionable debt
 
-- **Level:** SHOULD
+- **Level:** MUST
 - **Applies to:** all projects
 - **Risk levels:** R1, R2, R3
-- **Requirement:** Remove dead code instead of commenting it out. Make deferred
-  work actionable by linking `TODO` or `FIXME` notes to an issue or by recording
-  enough owner and intent to resolve them.
-- **Rationale:** Version control preserves removed code; anonymous markers tend
-  to become permanent and lose context.
-- **Verification:** Search changed files for commented-out implementations and
-  unqualified debt markers.
-- **Sources:** Practitioner experience with production TypeScript applications.
-- **Exceptions:** A short-lived marker in an unmerged branch may omit an issue
-  link when the same change resolves it.
+- **Requirement:** Remove dead code instead of commenting it out. Every `TODO`
+  or `FIXME` marker references the issue that tracks it, in the form
+  `TODO(#123)`.
+- **Rationale:** Version control preserves removed code, and commented-out code
+  drifts from the code around it until nobody can tell whether it still
+  applies. A marker without an issue has no owner and no place in planning, so
+  it tends to become permanent and lose its context.
+- **Verification:** The `foundation/todo-issue-reference` rule in the shared
+  ESLint configuration rejects a marker without an issue reference;
+  `sonarjs/no-commented-code` rejects commented-out code.
+- **Sources:** [SonarSource rule S125 — commented-out code](https://rules.sonarsource.com/javascript/RSPEC-125/), practitioner experience with production TypeScript applications.
+- **Exceptions:** A project using a tracker whose references do not match
+  `#123` configures its own pattern through the rule's `reference` option
+  instead of dropping the rule. Work that the same change completes needs no
+  marker at all.
+
+## `CORE-SUPPRESS-001` — justified and narrow lint suppressions
+
+- **Level:** MUST
+- **Applies to:** all projects
+- **Risk levels:** R1, R2, R3
+- **Requirement:** Every ESLint disable directive names the rules it disables
+  and states its reason after `--`, on the narrowest scope that works, for
+  example `// eslint-disable-next-line sonarjs/no-os-command-from-path -- Git
+  from the user's PATH by design`. A directive that no longer suppresses
+  anything is removed.
+- **Rationale:** A suppression is a local exception to a shared requirement. A
+  reason records the decision for the reviewer and the next reader, a named
+  rule keeps every other check active, and removing stale directives keeps the
+  exceptions visible instead of letting them accumulate.
+- **Verification:** `@eslint-community/eslint-comments/require-description`,
+  `no-unlimited-disable` and the plugin's pairing rules reject undocumented or
+  unbounded directives; `reportUnusedDisableDirectives` rejects stale ones.
+- **Sources:** [ESLint — disabling rules with comments](https://eslint.org/docs/latest/use/configure/rules#disabling-rules), [eslint-plugin-eslint-comments](https://eslint-community.github.io/eslint-plugin-eslint-comments/), practitioner experience with production TypeScript applications.
+- **Exceptions:** Generated code follows its generator's directives and is not
+  edited manually.
+
+## `CORE-COMPLEXITY-001` — bounded cognitive complexity
+
+- **Level:** MUST
+- **Applies to:** application and script source in all projects
+- **Risk levels:** R1, R2, R3
+- **Requirement:** Keep the cognitive complexity of each function at or below
+  15 and control-flow nesting at or below four levels. Split a function that
+  exceeds either bound into named units instead of suppressing the check.
+- **Rationale:** Complexity concentrated in one function is where defects and
+  regressions hide: it is harder to read, to test exhaustively and to change
+  safely, for humans and for agents. Cognitive complexity penalizes nesting and
+  broken linear flow, which tracks reading effort more closely than counting
+  paths.
+- **Verification:** `sonarjs/cognitive-complexity` and `max-depth` in the
+  shared ESLint configuration. The preset also applies the SonarJS recommended
+  rules for bug patterns and code smells; see the code health baseline in the
+  [tooling reference](../tooling.md).
+- **Sources:** [SonarSource — Cognitive Complexity](https://www.sonarsource.com/resources/cognitive-complexity/), [ESLint `max-depth`](https://eslint.org/docs/latest/rules/max-depth), practitioner experience with production TypeScript applications.
+- **Exceptions:** A function whose complexity mirrors an external
+  specification, such as a protocol state table, may keep it with a suppression
+  that names the specification as its reason.

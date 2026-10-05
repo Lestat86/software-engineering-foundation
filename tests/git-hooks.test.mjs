@@ -60,6 +60,7 @@ test('a generated project owns and activates its Git hooks even inside a parent 
   assert.ok(statSync(resolve(projectDirectory, '.husky/_/pre-commit')).mode & 0o100)
 
   const parentHooksPath = spawnSync(
+    // eslint-disable-next-line sonarjs/no-os-command-from-path -- Git from the user's PATH
     'git',
     ['config', '--local', '--get', 'core.hooksPath'],
     { cwd: parentDirectory, encoding: 'utf8' },

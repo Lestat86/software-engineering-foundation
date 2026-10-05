@@ -147,10 +147,10 @@ for (const [server, root] of Object.entries(variants)) {
   })
 
   test(`the ${server} monorepo typechecks every workspace, including the shared contract`, () => {
-    run(root, binary('tsc'), ['-p', 'packages/shared/tsconfig.json'])
-    run(root, binary('tsc'), ['-p', 'apps/client/tsconfig.app.json'])
-    run(root, binary('tsc'), ['-p', 'apps/client/tsconfig.node.json'])
-    run(root, binary('tsc'), ['-p', 'apps/server/tsconfig.json'])
+    assert.doesNotThrow(() => run(root, binary('tsc'), ['-p', 'packages/shared/tsconfig.json']))
+    assert.doesNotThrow(() => run(root, binary('tsc'), ['-p', 'apps/client/tsconfig.app.json']))
+    assert.doesNotThrow(() => run(root, binary('tsc'), ['-p', 'apps/client/tsconfig.node.json']))
+    assert.doesNotThrow(() => run(root, binary('tsc'), ['-p', 'apps/server/tsconfig.json']))
   })
 
   test(`the ${server} monorepo runs every workspace test suite`, () => {
