@@ -48,7 +48,7 @@ all'agente di aggirare L1. L3 copre solo ciò che richiede giudizio.
 | Ciclo autonomous | Massimo 3 giri implementatore ↔ revisore, poi l'umano |
 | Stryker | Nei template: incrementale sul diff in `premerge`, completo nightly |
 | Piani e spec | Una cartella per feature: `docs/features/<slug>/` con `plan.md`, `spec.md` (UI) e screenshot, versionata |
-| Preset ESLint, tsconfig, commitlint | SEF li pubblica come pacchetti propri; `@black-bytes/eslint-config` li estende (oggi il generatore li copia nei progetti) |
+| Preset ESLint, tsconfig, commitlint | Nessun pacchetto per ora. I progetti nuovi ricevono il preset SEF copiato (come oggi); nei progetti esistenti che usano `@black-bytes/eslint-config` SEF aggiunge in locale solo le proprie regole, sommate al preset aziendale. Gli aggiornamenti passano da `sync-foundation`. Un pacchetto pubblicato resta un'evoluzione possibile |
 | Next.js | Escluso per ora |
 | Yarn Modern nel retrofit | Obbligatorio: prima PR dell'ondata 0 |
 | SonarQube | Rimandato; da rivalutare per la dashboard multi-progetto |
@@ -82,14 +82,29 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 
 ## Fasi
 
-### Fase 0 — pacchetti condivisi
+### Distribuzione e aggiornamento degli asset copiati
 
-- Estrarre preset ESLint, tsconfig base e configurazione commitlint in pacchetti
-  pubblicati da SEF; il generatore li aggiunge come dipendenze invece di
-  copiarli.
-- ADR per il cambio di modello di distribuzione (sostituisce in parte ADR 0004).
-- **Da decidere:** registry e nome dei pacchetti (npm pubblico con scope, GitHub
-  Packages, GitLab Package Registry).
+Nessun pacchetto pubblicato per ora: SEF continua a copiare gli asset nei
+progetti. Per aggiornarli si aggiunge uno script `sync-foundation` nella skill,
+accanto a `generate-project.mjs`.
+
+- Il generatore registra in `.engineering-foundation.yml` l'hash di ogni file
+  copiato da SEF.
+- `sync-foundation --target <dir>` confronta la `foundationVersion` del
+  progetto con quella di SEF e, per ogni asset:
+  - non modificato dall'ultima copia → lo aggiorna;
+  - modificato in locale → non lo tocca, scrive accanto `<file>.sef-new` e lo
+    segnala come conflitto;
+  - nuovo nella versione SEF → lo aggiunge.
+- Aggiorna `foundationVersion` e gli hash solo per i file effettivamente
+  allineati, e stampa un riepilogo (aggiornati, conflitti, nuovi). Nessuna
+  cancellazione.
+- Modalità `--dry-run` di default; l'applicazione richiede un flag esplicito.
+- Copre sia l'aggiornamento di versione dei progetti SEF sia l'allineamento del
+  retrofit (le regole SEF aggiunte in locale accanto a
+  `@black-bytes/eslint-config`).
+- ADR: introduce la scrittura controllata su file esistenti, regolata dagli
+  hash, a fianco della regola "scripts never delete or overwrite user files".
 
 ### Fase 1 — L1 nel progetto generato
 
