@@ -24,6 +24,22 @@ workflow mode, and an empty `docs/exceptions.yml` register. Both are validated
 by `.config/foundation/check-foundation.mjs` as defined in the
 [project record standard](standards/project-record.md).
 
+## Updating a project
+
+`.config/foundation/assets.json` records the hash of every foundation-owned
+file at generation. From the foundation repository, run:
+
+```sh
+node <skill-directory>/scripts/sync-foundation.mjs --target <dir>          # report
+node <skill-directory>/scripts/sync-foundation.mjs --target <dir> --apply  # write
+```
+
+It updates files the project never changed, adds new ones, writes
+`<file>.sef-new` next to files the project changed, reports deleted and
+retired files without recreating or removing them, and lists the dependency
+and script changes to make by hand. `foundationVersion` in the record moves
+only when everything is aligned.
+
 ## Required commands
 
 Every generated project exposes consistent Yarn scripts for:

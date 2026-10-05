@@ -94,13 +94,13 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 1b — `yarn premerge` con copertura sul diff | ✅ fatto | `01e37c9` | 0017 |
 | Fase 1b — Knip | ✅ fatto | `01b3ecd` | 0018 |
 | Fase 1b — Stryker | ⏸️ rinviato | — | — |
-| `sync-foundation` | ☐ | — | — |
+| `sync-foundation` | ✅ fatto | `feat/sync-foundation` | 0019 |
 | Fase 2 — requisiti nel progetto, template di piano | ☐ | — | — |
 | Fase 3 — plugin e revisore | ☐ | — | — |
 | Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/premerge`.
+`feat/sync-foundation`.
 
 Decisioni prese durante il lavoro:
 

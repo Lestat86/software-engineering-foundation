@@ -215,11 +215,33 @@ the decision for reviewers and agents. Change it in
 
 ## Updating a project to a new foundation version
 
-Copied assets do not update themselves. Until the planned synchronization
-command is available, compare `foundationVersion` in your record with the
-foundation's release notes and ADRs, copy the changed assets, update
-`requirements.json` and run `corepack yarn validate`. A major version can make
-code that passed before fail; the ADR of each change describes the migration.
+The files the foundation owns (everything under `.config/`, the hooks, the
+dependency, Knip and secret rules, the request templates and the pipeline) are
+listed with their hash in `.config/foundation/assets.json`. To bring a project
+to the foundation version you have checked out:
+
+```sh
+node <foundation>/skills/bootstrap-web-project/scripts/sync-foundation.mjs --target .
+node <foundation>/skills/bootstrap-web-project/scripts/sync-foundation.mjs --target . --apply
+```
+
+The first command only reports; the second writes. Each file gets one status:
+
+| Status | Meaning | What `--apply` does |
+| --- | --- | --- |
+| `current` | Already the foundation's version. | Nothing. |
+| `update` | Unchanged since the foundation wrote it, now outdated. | Replaces it. |
+| `add` | New in this foundation version. | Writes it. |
+| `conflict` | Changed in your project. | Leaves it and writes `<file>.sef-new` next to it. Merge the two by hand, delete the `.sef-new` file and run again. |
+| `missing` | Deleted in your project. | Nothing. To restore it, remove its entry from `assets.json` and run again: it becomes `add`. If you removed it on purpose, record why in `docs/exceptions.yml`; the version stays unaligned until the file is back. |
+| `obsolete` | No longer part of the foundation. | Nothing; delete it yourself if nothing uses it. |
+
+Lines starting with `manual` list dependencies and scripts to change in
+`package.json`; run `corepack yarn install` afterwards. The record's
+`foundationVersion` moves to the new version only when no conflict, missing
+file or manual change remains. Finish with `corepack yarn validate`. A major
+version can make code that passed before fail; its ADR describes the
+migration.
 
 ## Further reading
 

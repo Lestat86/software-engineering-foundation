@@ -14,7 +14,12 @@ of generic tutorials.
 - Put files intended for generated projects under `assets/`, not in references.
 - Put deterministic bootstrap steps in `skills/bootstrap-web-project/scripts/`
   and keep the references as their specification. Scripts never delete or
-  overwrite user files.
+  overwrite user files. The one controlled exception is `sync-foundation.mjs`,
+  which replaces a foundation-owned file only when its recorded hash proves the
+  project never changed it, and writes `<file>.sef-new` otherwise.
+- Every file a generated project receives from `tooling/`, `ci/` or the
+  request templates is listed by `renderFoundationAssets`; add new tooling
+  there so synchronization covers it.
 - Do not duplicate a requirement across multiple documents; link to its
   canonical location.
 - Use Yarn through Corepack. Do not introduce npm, pnpm or Bun workflows.

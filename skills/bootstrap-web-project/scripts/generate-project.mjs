@@ -10,6 +10,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -17,6 +18,7 @@ import { parseArgs } from 'node:util'
 
 import {
   CLI_ARGUMENTS_OFFSET,
+  GENERATED_FILE_MODE,
   MANIFEST_INDENT_SPACES,
   MAX_REPORTED_BLOCKING_ENTRIES,
 } from './generate-project.constants.mjs'
@@ -190,6 +192,65 @@ const copyTemplateTree = (sourceDirectory, targetDirectory, values) => {
   }
 }
 
+const listTemplateFiles = (sourceDirectory, targetDirectory) => {
+  return readdirSync(resolve(assetsRoot, sourceDirectory), { withFileTypes: true }).flatMap(
+    (entry) => {
+      const source = join(sourceDirectory, entry.name)
+      const target = targetDirectory === '' ? entry.name : join(targetDirectory, entry.name)
+      return entry.isDirectory() ? listTemplateFiles(source, target) : [{ source, target }]
+    },
+  )
+}
+
+export const ASSET_RECORD_PATH = '.config/foundation/assets.json'
+const REQUIREMENTS_PATH = '.config/foundation/requirements.json'
+
+export const hashContent = (content) => createHash('sha256').update(content).digest('hex')
+
+/**
+ * Renders the files the foundation owns in a generated project, keyed by their
+ * path in the project: the shared tooling, hooks, checks and request templates.
+ * Application code, the project record and the exception register belong to
+ * the project and are not listed. The generator and `sync-foundation.mjs` both
+ * use this list, so an update produces exactly what a new project would get.
+ */
+export const renderFoundationAssets = ({ appliedProfiles, ci, values, versions }) => {
+  const eslintModules = new Set(
+    appliedProfiles.flatMap((profileName) => requireProfile(versions, profileName).eslintModules),
+  )
+  const files = [
+    ...[...eslintModules].map((moduleName) => ({
+      source: `tooling/eslint/${moduleName}.mjs`,
+      target: `.config/eslint/${moduleName}.mjs`,
+    })),
+    ...listTemplateFiles('tooling/typescript', '.config/typescript'),
+    ...listTemplateFiles('tooling/foundation', '.config/foundation'),
+    ...listTemplateFiles('tooling/git', ''),
+    ...listTemplateFiles('tooling/architecture', ''),
+    ...listTemplateFiles('common/.github', '.github'),
+    ...listTemplateFiles('common/.gitlab', '.gitlab'),
+    { source: 'common/.editorconfig', target: '.editorconfig' },
+    ...(ci === 'none' ? [] : listTemplateFiles(join('ci', ci), '')),
+  ]
+  const assets = new Map(files.map(({ source, target }) => {
+    const sourcePath = resolve(assetsRoot, source)
+    return [target, {
+      content: substitute(readFileSync(sourcePath, 'utf8'), values, source),
+      mode: statSync(sourcePath).mode,
+    }]
+  }))
+  assets.set(REQUIREMENTS_PATH, {
+    content: `${JSON.stringify(readRequirementLevels(), null, MANIFEST_INDENT_SPACES)}\n`,
+    mode: GENERATED_FILE_MODE,
+  })
+  return new Map([...assets].sort(([left], [right]) => left.localeCompare(right)))
+}
+
+/** The record `sync-foundation.mjs` compares with: one hash per owned file. */
+export const formatAssetRecord = (foundationVersion, hashes) => {
+  return `${JSON.stringify({ foundationVersion, files: hashes }, null, MANIFEST_INDENT_SPACES)}\n`
+}
+
 const requireProfile = (versions, profileName) => {
   const profile = versions.profiles[profileName]
   if (profile === undefined) {
@@ -243,7 +304,7 @@ const knipProfileIgnores = {
   supabase: () => `'@supabase/supabase-js'`,
 }
 
-const describeKnipIgnores = (appliedProfiles, scope) => {
+export const describeKnipIgnores = (appliedProfiles, scope) => {
   const entries = appliedProfiles
     .filter((profileName) => profileName in knipProfileIgnores)
     .map((profileName) => knipProfileIgnores[profileName](scope))
@@ -256,6 +317,26 @@ const describeKnipIgnores = (appliedProfiles, scope) => {
     '    // once the code imports it, so an unused declaration is reported again.',
     ...entries.map((entry) => `    ${entry},`),
   ].join('\n')
+}
+
+/**
+ * Records what the foundation wrote, so a later synchronization can tell an
+ * untouched asset from one the project changed. Each copied file must match its
+ * rendering exactly, otherwise the record would be wrong from the start.
+ */
+const writeAssetRecord = ({ appliedProfiles, ci, targetDirectory, values, versions }) => {
+  const hashes = {}
+  const assets = renderFoundationAssets({ appliedProfiles, ci, values, versions })
+  for (const [path, { content }] of assets) {
+    if (readFileSync(resolve(targetDirectory, path), 'utf8') !== content) {
+      throw new Error(`generated ${path} differs from its foundation asset`)
+    }
+    hashes[path] = hashContent(content)
+  }
+  writeFileSync(
+    resolve(targetDirectory, ASSET_RECORD_PATH),
+    formatAssetRecord(versions.foundationVersion, hashes),
+  )
 }
 
 /**
@@ -431,7 +512,7 @@ export const generateProject = ({
     rootValues,
   )
   writeFileSync(
-    resolve(targetDirectory, '.config/foundation/requirements.json'),
+    resolve(targetDirectory, REQUIREMENTS_PATH),
     `${JSON.stringify(readRequirementLevels(), null, MANIFEST_INDENT_SPACES)}\n`,
   )
 
@@ -481,6 +562,8 @@ export const generateProject = ({
     manifest.resolutions = sortedEntries(resolutions)
   }
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, MANIFEST_INDENT_SPACES)}\n`)
+
+  writeAssetRecord({ appliedProfiles, ci, targetDirectory, values: rootValues, versions })
 
   return { targetDirectory, values, versions, appliedProfiles, workspaceMap }
 }
