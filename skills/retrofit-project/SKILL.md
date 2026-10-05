@@ -40,7 +40,8 @@ request. Work in the assisted mode: you analyze and propose, the person decides.
    [the foundation](../bootstrap-web-project/references/foundation.md), state
    one status: compliant, autofixable, baseline, work needed, not applicable
    or exception proposed. Write the inventory and the assessment to
-   `docs/foundation/retrofit-assessment.md` in the project.
+   `docs/retrofit-assessment.md` in the project; `docs/foundation/` belongs to
+   the foundation and is replaced by synchronization.
 4. **Plan the waves** described in [waves](references/waves.md), one plan per
    pull request in `docs/features/retrofit-<n>/plan.md`, from the plan template
    once wave 0 has installed it, and confirm the order with the person.

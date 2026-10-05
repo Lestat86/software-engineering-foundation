@@ -303,7 +303,8 @@ problema: codice esistente che non rispetta regole nuove.
    tsconfig, test runner, conteggi di soppressioni e TODO, file sospetti
    tracciati.
 2. Classificazione del rischio con l'umano (`SEC-RISK-001`).
-3. Gap per requisito in `docs/foundation/retrofit-assessment.md`.
+3. Gap per requisito in `docs/retrofit-assessment.md` (non in
+   `docs/foundation/`, che è gestita da `sync-foundation`).
 4. Piano a ondate:
    - **Ondata 0, rete di sicurezza, senza toccare il codice applicativo:**
      migrazione a Yarn Modern (prima PR), manifest con `workflow`,

@@ -37,7 +37,7 @@ Next.js is out of scope.
 ## Install the skill
 
 **With Claude Code, install the plugin.** It contains the bootstrap skill, the
-pre-pull-request reviewer, the exception skill and two hooks
+pre-pull-request reviewer, the exception and retrofit skills and two hooks
 ([Using the Claude Code plugin](#using-the-claude-code-plugin)):
 
 ```text
@@ -91,13 +91,13 @@ hooks are never installed into a parent repository.
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | Instructions for any coding agent working in the project. |
-| `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, workflow mode. |
+| `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, workflow mode, and the `premerge` base branch and coverage minimum. |
 | `docs/exceptions.yml` | The register of exceptions to foundation requirements, empty at first. |
-| `docs/foundation/` | The foundation requirements, with `README.md` listing the ones that apply to this project. |
+| `docs/foundation/` | The foundation requirements, with `README.md` listing the ones that apply to this project. Read-only: synchronization replaces it. |
 | `docs/features/` | Feature plans and specifications, and their templates in `_template/`. |
 | `.config/eslint/` | The shared ESLint modules, composed by `eslint.config.mjs`. |
 | `.config/typescript/` | The shared strict TypeScript configurations. |
-| `.config/foundation/` | The record and exception checker and the list of known requirement identifiers. |
+| `.config/foundation/` | The record, exception and plan checker (`check-foundation.mjs`), the pre-merge script (`premerge.mjs`), the known requirement identifiers (`requirements.json`) and the hash of every foundation-owned file (`assets.json`). |
 | `.dependency-cruiser.mjs` | Dependency class and boundary rules. |
 | `knip.config.js` | Unused file, export and dependency detection, run by `premerge`. |
 | `.secretlintrc.json` | Secret scanning rules. |
@@ -105,8 +105,8 @@ hooks are never installed into a parent repository.
 | `.github/pull_request_template.md`, `.gitlab/merge_request_templates/Default.md` | Pull and merge request templates with the pre-merge checklist; keep the one for your platform. |
 | `.gitlab-ci.yml` | Only with `--ci gitlab`: the gate jobs and GitLab Secret Detection. |
 
-Files under `.config/` and the dotfiles above are copied from the foundation.
-Prefer extending them through the options they export, such as
+Files under `.config/` and `docs/foundation/`, the feature templates and the
+dotfiles above are copied from the foundation. Prefer extending them through the options they export, such as
 `literalExemptFiles` or extra `forbidden` entries, over editing them, so a
 later foundation update can tell your changes from its own.
 
@@ -135,7 +135,7 @@ later foundation update can tell your changes from its own.
 
 | Script | Checks |
 | --- | --- |
-| `lint:foundation` | The project record is complete and matches `package.json`; every exception is complete, refers to a known requirement and has not expired. |
+| `lint:foundation` | The project record is complete and matches `package.json`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, and no unsettled acceptance criterion once `done`. |
 | `lint:code` | ESLint: typed TypeScript rules, arrow functions, named constants instead of inline numbers, tracked debt markers, described suppressions, bounded complexity, SonarJS bug and code-smell rules, React and accessibility rules. |
 | `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries. |
 | `lint:secrets` | No secret in any file Git can commit. |
@@ -169,6 +169,9 @@ premerge: passed on 4c52ce0a…
 - The minimum is `premerge.diffCoverage` in the same file, 80 by default.
   Lines without a statement, tests and entry points such as `src/server.ts`
   are not counted.
+- In a retrofitted project, premerge also fails when a baseline of frozen
+  violations has more entries than on the base branch; see
+  [Retrofitting an existing project](#retrofitting-an-existing-project).
 
 ## When a check fails
 
@@ -191,10 +194,12 @@ premerge: passed on 4c52ce0a…
 | `premerge`: baseline grew | Fix the new violations; never re-run `--suppress-all` to hide them. |
 | ESLint: suppressions left that do not occur anymore | Good news: run `corepack yarn eslint . --prune-suppressions` and commit the smaller baseline. |
 | `premerge`: base not found | `git fetch origin`, or set `FOUNDATION_BASE_REF` to the branch you will merge into. |
+| `lint:foundation`: plan without front matter, with an unknown status or missing a section | Start from `docs/features/_template/plan.md` and keep every heading, even when a section only says "none". |
 | `lint:foundation`: plan with open blocking questions | Answer them, record the answers under "Decisions", empty the list, then move the status forward. |
 | `lint:foundation`: plan done with an unsettled criterion | Check it if verified, or mark it `manual: <who>` or `deferred: #<issue>`. |
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
+| `lint:foundation`: `premerge.baseRef` or `premerge.diffCoverage` invalid | Set the branch you merge into and a percentage between 0 and 100. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |
 
 ## Planning a feature
@@ -203,8 +208,9 @@ For work that needs analysis, write the plan before the code: copy
 `docs/features/_template/plan.md` to `docs/features/<slug>/plan.md`, and
 `spec.md` next to it for user interface work.
 
-The front matter carries the issue, the `status` and the security
-reassessment:
+The front matter carries the issue, the `status`, the security reassessment
+and, optionally, a `workflow` that overrides the project's mode for this
+feature:
 
 | Status | Meaning | What `lint` requires |
 | --- | --- | --- |
@@ -245,10 +251,11 @@ The project record states how changes are reviewed:
 - **`assisted`**: a person reviews every pull request. This is the default.
 - **`autonomous`**: review is automated.
 
-The mode is recorded and validated today. Later foundation releases will use
-it to adjust thresholds and the automated review loop; until then it documents
-the decision for reviewers and agents. Change it in
-`.engineering-foundation.yml` when the way the project is reviewed changes.
+`/sef:review` follows it: one review pass reported to you in `assisted` mode,
+up to three fix-and-review rounds in `autonomous` mode (see
+[Using the Claude Code plugin](#using-the-claude-code-plugin)). A feature plan
+can override it with `workflow` in its front matter. Change the project's mode
+in `.engineering-foundation.yml` when the way the project is reviewed changes.
 
 ## Using the Claude Code plugin
 
@@ -299,7 +306,7 @@ It reports the stack, package manager, ESLint configuration, hooks, CI,
 TypeScript flags, suppressions, debt markers and suspicious tracked files, each
 mapped to a requirement. With the plugin, `/sef:retrofit-project` runs the
 whole process: risk classification, gap assessment in
-`docs/foundation/retrofit-assessment.md`, and one plan per pull request:
+`docs/retrofit-assessment.md`, and one plan per pull request:
 
 1. **Wave 0**: Yarn Modern, a one-off scan of the Git history for secrets, the
    foundation files through `sync-foundation.mjs`, and the scripts and hooks.
