@@ -27,22 +27,25 @@ user choices and recording every applied foundation decision.
 1. Inspect the target and do not overwrite meaningful existing files without
    explicit authorization.
 2. Determine whether the project is frontend, backend or full-stack; identify
-   the selected supported frameworks and whether GitLab CI is wanted.
+   the selected supported frameworks, whether GitLab CI is wanted and the
+   workflow mode: `assisted` when people review every pull request, or
+   `autonomous` when review is automated. Default to `assisted`.
 3. Read [the shared foundation](references/foundation.md).
 4. Read [the shared tooling implementation](references/tooling.md).
 5. Read [risk classification](references/security/risk-classification.md) and
    the selected risk-level reference.
 6. Read only the applicable stack references listed below.
 7. Generate the project with the skill script, which applies the profiles in
-   order, writes `AGENTS.md` and `.engineering-foundation.yml` and refuses a
-   target that is not empty:
+   order, writes `AGENTS.md`, `.engineering-foundation.yml` and an empty
+   `docs/exceptions.yml`, and refuses a target that is not empty:
 
    ```sh
    node <skill-directory>/scripts/generate-project.mjs \
      --target <dir> --name <package-name> \
      --profile <base-profile> [--profile supabase] \
      [--client react-vite --server fastify|nest] [--ci gitlab] \
-     --security-level R1|R2|R3 --security-rationale "<why>" [--html-lang <tag>]
+     --security-level R1|R2|R3 --security-rationale "<why>" [--html-lang <tag>] \
+     [--workflow assisted|autonomous]
    ```
 
    Full-stack projects use `--profile monorepo` with `--client` and

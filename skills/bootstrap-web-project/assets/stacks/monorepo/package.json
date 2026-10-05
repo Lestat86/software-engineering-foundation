@@ -10,8 +10,11 @@
   "scripts": {
     "dev": "yarn workspaces foreach -Api --exclude {{PROJECT_NAME}} run dev",
     "build": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run build",
-    "lint": "eslint . --max-warnings=0 && secretlint --secretlintignore .gitignore \"**/*\"",
+    "lint": "yarn lint:foundation && yarn lint:code && yarn lint:secrets",
+    "lint:code": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix --max-warnings=0",
+    "lint:foundation": "node .config/foundation/check-foundation.mjs",
+    "lint:secrets": "secretlint --secretlintignore .gitignore \"**/*\"",
     "typecheck": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run typecheck",
     "test": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run test",
     "validate": "yarn lint && yarn build && yarn typecheck && yarn test",

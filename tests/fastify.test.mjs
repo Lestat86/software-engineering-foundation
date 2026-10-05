@@ -111,9 +111,9 @@ test('the generated Fastify project scans committable files for secrets without 
 
   const lintStaged = await import(resolve(projectDirectory, 'lint-staged.config.mjs'))
   assert.equal(lintStaged.default['*'], 'secretlint', 'every staged file is scanned')
-  assert.match(
-    JSON.parse(readFileSync(resolve(projectDirectory, 'package.json'), 'utf8')).scripts.lint,
-    /&& secretlint --secretlintignore \.gitignore "\*\*\/\*"$/,
+  assert.equal(
+    JSON.parse(readFileSync(resolve(projectDirectory, 'package.json'), 'utf8')).scripts['lint:secrets'],
+    'secretlint --secretlintignore .gitignore "**/*"',
   )
 })
 

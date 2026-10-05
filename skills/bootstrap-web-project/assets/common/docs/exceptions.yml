@@ -1,0 +1,15 @@
+# Exceptions to foundation requirements (RECORD-EXCEPTION-001).
+#
+# Every intentional deviation from a MUST requirement is recorded here. The
+# lint gate rejects an entry with a missing field, an unknown requirement or an
+# expiry date in the past. Example:
+#
+# exceptions:
+#   - id: CORE-COMPLEXITY-001
+#     scope: src/protocol/state-table.ts
+#     justification: The state table mirrors the transitions of RFC 9110.
+#     compensatingControl: Table-driven tests cover every transition.
+#     owner: payments team
+#     expires: 2027-03-31
+
+exceptions: []

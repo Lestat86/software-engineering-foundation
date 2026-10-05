@@ -12,19 +12,23 @@ Read and apply every shared standard before generating a project:
 - [Testing](standards/testing.md)
 - [Dependencies and toolchain](standards/dependencies.md)
 - [Git workflow](standards/git-workflow.md)
+- [Project record](standards/project-record.md)
 
 Then apply the [shared tooling implementation](tooling.md).
 
 ## Project record
 
 Generate `.engineering-foundation.yml` with the foundation version, selected
-profiles, security level, accessibility target, package manager and CI choice.
+profiles, security level, accessibility target, package manager, CI choice and
+workflow mode, and an empty `docs/exceptions.yml` register. Both are validated
+by `.config/foundation/check-foundation.mjs` as defined in the
+[project record standard](standards/project-record.md).
 
 ## Required commands
 
 Every generated project exposes consistent Yarn scripts for:
 
-- `lint`
+- `lint`, which runs `lint:foundation`, `lint:code` and `lint:secrets`
 - `lint:fix`
 - `typecheck`
 - `test`

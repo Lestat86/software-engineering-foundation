@@ -97,8 +97,11 @@ public names:
 
 ```json
 {
-  "lint": "eslint . --max-warnings=0 && secretlint --secretlintignore .gitignore \"**/*\"",
+  "lint": "yarn lint:foundation && yarn lint:code && yarn lint:secrets",
+  "lint:code": "eslint . --max-warnings=0",
   "lint:fix": "eslint . --fix --max-warnings=0",
+  "lint:foundation": "node .config/foundation/check-foundation.mjs",
+  "lint:secrets": "secretlint --secretlintignore .gitignore \"**/*\"",
   "typecheck": "tsc --noEmit",
   "validate": "yarn lint && yarn typecheck && yarn test && yarn build",
   "postinstall": "husky"

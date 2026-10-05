@@ -38,6 +38,9 @@ corepack yarn validate
 
 Read `.engineering-foundation.yml` for the selected profiles and security
 classification. Apply the matching security profile and keep ASVS evidence
-versioned with the project. Document any intentional deviation from a MUST
-requirement with its identifier, reason, compensating control, owner and review
-date.
+versioned with the project. Record any intentional deviation from a MUST
+requirement in `docs/exceptions.yml` with its identifier, scope, justification,
+compensating control, owner and expiry date; `corepack yarn lint` rejects an
+incomplete or expired entry. Keep `.engineering-foundation.yml` in step with
+the project. Its workflow mode, `{{WORKFLOW}}`, states whether people review
+every change (`assisted`) or review is automated (`autonomous`).

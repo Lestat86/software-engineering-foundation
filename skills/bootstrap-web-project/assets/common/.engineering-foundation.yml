@@ -8,3 +8,4 @@ security:
 accessibility: "{{ACCESSIBILITY_TARGET}}"
 packageManager: "yarn@{{YARN_VERSION}}"
 ci: "{{CI_PROFILE}}"
+workflow: "{{WORKFLOW}}"

@@ -22,13 +22,50 @@ import {
 } from './generate-project.constants.mjs'
 
 const assetsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../assets')
+const referencesRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../references')
 const placeholderPattern = /\{\{([A-Z0-9_]+)\}\}/g
 const appendableFiles = new Set(['.gitignore', '.env.example'])
-const rootOnlyScripts = new Set(['lint', 'lint:fix', 'validate', 'postinstall'])
+const rootOnlyScripts = new Set([
+  'lint',
+  'lint:code',
+  'lint:fix',
+  'lint:foundation',
+  'lint:secrets',
+  'validate',
+  'postinstall',
+])
+const workflows = new Set(['assisted', 'autonomous'])
 const tolerableTargetEntries = new Set(['.git'])
 
 export const readVersions = () => {
   return JSON.parse(readFileSync(resolve(assetsRoot, 'tooling/versions.json'), 'utf8'))
+}
+
+const collectMarkdownFiles = (directory) => {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = resolve(directory, entry.name)
+    if (entry.isDirectory()) {
+      return collectMarkdownFiles(entryPath)
+    }
+    return entry.name.endsWith('.md') ? [entryPath] : []
+  })
+}
+
+/**
+ * Maps every requirement identifier of the references to its normative level,
+ * so the generated project can reject an exception for an unknown requirement.
+ */
+export const readRequirementLevels = () => {
+  const levels = {}
+  for (const file of collectMarkdownFiles(referencesRoot)) {
+    const document = readFileSync(file, 'utf8')
+    for (const match of document.matchAll(/^## `([A-Z][A-Z0-9-]+)`[^\n]*\n\n- \*\*Level:\*\* (MUST|SHOULD|MAY)$/gm)) {
+      levels[match[1]] = match[2]
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(levels).sort(([left], [right]) => left.localeCompare(right)),
+  )
 }
 
 /**
@@ -294,6 +331,7 @@ export const generateProject = ({
   htmlLang = 'en',
   securityLevel = 'R1',
   securityRationale = 'Public demonstration content without authentication or personal data.',
+  workflow = 'assisted',
 }) => {
   if (typeof projectName !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(projectName)) {
     throw new Error('projectName must be a lowercase package name without a scope')
@@ -306,6 +344,9 @@ export const generateProject = ({
   }
   if (!['R1', 'R2', 'R3'].includes(securityLevel)) {
     throw new Error('securityLevel must be R1, R2 or R3')
+  }
+  if (!workflows.has(workflow)) {
+    throw new Error('workflow must be assisted or autonomous')
   }
 
   const versions = readVersions()
@@ -325,6 +366,7 @@ export const generateProject = ({
     SECURITY_LEVEL: securityLevel,
     SECURITY_RATIONALE: securityRationale,
     SCOPE: projectName,
+    WORKFLOW: workflow,
     WORKSPACES_YAML: JSON.stringify(workspaceMap),
     YARN_VERSION: versions.runtime.yarn,
   }
@@ -357,6 +399,15 @@ export const generateProject = ({
     rootValues,
   )
   copyTemplateTree(resolve(assetsRoot, 'tooling/git'), targetDirectory, rootValues)
+  copyTemplateTree(
+    resolve(assetsRoot, 'tooling/foundation'),
+    resolve(targetDirectory, '.config/foundation'),
+    rootValues,
+  )
+  writeFileSync(
+    resolve(targetDirectory, '.config/foundation/requirements.json'),
+    `${JSON.stringify(readRequirementLevels(), null, MANIFEST_INDENT_SPACES)}\n`,
+  )
 
   let dependencies = {}
   let devDependencies = {}
@@ -411,6 +462,7 @@ export const generateProject = ({
 const usage = `usage: generate-project.mjs --target <dir> --name <package-name> --profile <profile>...
   [--client <profile>] [--server <profile>] [--ci gitlab]
   [--security-level R1|R2|R3] [--security-rationale <text>] [--html-lang <bcp47>]
+  [--workflow assisted|autonomous]
 
 Profiles are applied in order; overlays such as supabase follow a base profile.
 The monorepo profile requires --client and --server. The target directory must
@@ -429,6 +481,7 @@ const runCli = (argv) => {
       'security-level': { type: 'string', default: 'R1' },
       'security-rationale': { type: 'string' },
       'html-lang': { type: 'string', default: 'en' },
+      'workflow': { type: 'string', default: 'assisted' },
       'help': { type: 'boolean', default: false },
     },
   })
@@ -457,6 +510,7 @@ const runCli = (argv) => {
     ci: values.ci,
     htmlLang: values['html-lang'],
     securityLevel: values['security-level'],
+    workflow: values.workflow,
     ...(values['security-rationale'] === undefined
       ? {}
       : { securityRationale: values['security-rationale'] }),
@@ -467,7 +521,7 @@ const runCli = (argv) => {
       `generated ${result.targetDirectory}`,
       `profiles: ${result.appliedProfiles.join(', ')}`,
       `workspaces: ${JSON.stringify(result.workspaceMap)}`,
-      `security: ${values['security-level']}; ci: ${values.ci}`,
+      `security: ${values['security-level']}; ci: ${values.ci}; workflow: ${values.workflow}`,
       'next: ensure-git-root.mjs, corepack yarn install, corepack yarn validate',
     ].join('\n') + '\n',
   )

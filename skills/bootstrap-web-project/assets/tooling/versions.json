@@ -127,7 +127,8 @@
     "lint-staged": "17.5.0",
     "secretlint": "13.0.7",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.70.0"
+    "typescript-eslint": "8.70.0",
+    "yaml": "2.9.1"
   },
   "fastifyDependencies": {
     "@fastify/cors": "11.3.0",

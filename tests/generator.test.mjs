@@ -47,13 +47,14 @@ test('the CLI generates a project into a new directory and reports the compositi
   assert.equal(result.status, 0, result.stderr)
   assert.match(result.stdout, /^generated /m)
   assert.match(result.stdout, /^profiles: fastify, supabase$/m)
-  assert.match(result.stdout, /^security: R2; ci: gitlab$/m)
+  assert.match(result.stdout, /^security: R2; ci: gitlab; workflow: assisted$/m)
   assert.ok(existsSync(resolve(target, 'src/app.ts')))
   assert.ok(existsSync(resolve(target, 'supabase/migrations/20260910120000_profiles.sql')))
   assert.ok(existsSync(resolve(target, '.gitlab-ci.yml')))
   const manifest = readFileSync(resolve(target, '.engineering-foundation.yml'), 'utf8')
   assert.match(manifest, /^security:\n {2}level: "R2"\n {2}rationale: "Authenticated API\."$/m)
   assert.match(manifest, /^ci: "gitlab"$/m)
+  assert.match(manifest, /^workflow: "assisted"$/m)
 })
 
 test('the CLI accepts a freshly initialized Git repository as target', (context) => {
