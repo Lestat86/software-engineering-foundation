@@ -69,6 +69,7 @@ test('the monorepo layout follows STRUCT-SHAPE-001 with root-owned tooling', () 
   for (const file of [
     '.config/eslint/react.mjs',
     '.husky/pre-commit',
+    '.secretlintrc.json',
     'eslint.config.mjs',
     'lint-staged.config.mjs',
     'apps/client/index.html',

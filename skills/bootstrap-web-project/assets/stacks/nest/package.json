@@ -10,7 +10,7 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node --env-file-if-exists=.env dist/main.js",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . --max-warnings=0 && secretlint --secretlintignore .gitignore \"**/*\"",
     "lint:fix": "eslint . --fix --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",

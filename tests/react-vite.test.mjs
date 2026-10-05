@@ -46,6 +46,7 @@ test('the generated React + Vite project is complete and fully resolved', () => 
     '.gitignore',
     '.husky/commit-msg',
     '.husky/pre-commit',
+    '.secretlintrc.json',
     '.node-version',
     '.yarnrc.yml',
     'AGENTS.md',

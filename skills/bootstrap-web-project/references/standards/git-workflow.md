@@ -77,8 +77,9 @@ when team or delivery constraints require one.
   insufficient.
 - **Rationale:** Git history and clones persist removed content, expanding the
   exposure beyond the current tree.
-- **Verification:** Use staged-file secret detection where available, review
-  environment and fixture changes and follow the incident process on detection.
+- **Verification:** `secretlint` scans staged files in the pre-commit hook and
+  every file Git does not ignore as part of `lint`; review environment and
+  fixture changes and follow the incident process on detection.
 - **Sources:** [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html), [GitHub guidance on removing sensitive data](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/removing-sensitive-data-from-a-repository).
 - **Exceptions:** None for real secret values. Test credentials must be inert,
   isolated and visibly synthetic.

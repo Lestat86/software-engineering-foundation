@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import test, { before } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -40,6 +40,7 @@ test('the generated Fastify project is complete and fully resolved', () => {
     '.env.example',
     '.engineering-foundation.yml',
     '.husky/pre-commit',
+    '.secretlintrc.json',
     'eslint.config.mjs',
     'src/app.ts',
     'src/config.constants.ts',
@@ -80,6 +81,40 @@ test('the generated Fastify project is complete and fully resolved', () => {
 
 test('the generated Fastify project passes the shared lint gate', () => {
   assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
+})
+
+test('the generated Fastify project scans committable files for secrets without printing them', async (context) => {
+  const scan = () => spawnSync(binary('secretlint'), ['--secretlintignore', '.gitignore', '**/*'], {
+    cwd: projectDirectory,
+    encoding: 'utf8',
+    env: { ...process.env, NO_COLOR: '1' },
+  })
+  // Built at runtime so that no token-shaped value is ever committed here.
+  const token = `ghp_${'a'.repeat(36)}`
+  const leakPath = resolve(projectDirectory, 'leaked-token.txt')
+  const ignoredPath = resolve(projectDirectory, '.env')
+  context.after(() => {
+    rmSync(leakPath, { force: true })
+    rmSync(ignoredPath, { force: true })
+  })
+
+  assert.equal(scan().status, 0, 'the generated templates contain no secret')
+
+  writeFileSync(ignoredPath, `GITHUB_TOKEN=${token}\n`)
+  assert.equal(scan().status, 0, 'a file Git ignores cannot be committed and is not scanned')
+
+  writeFileSync(leakPath, `token = "${token}"\n`)
+  const result = scan()
+  assert.equal(result.status, 1, 'a committable token fails the scan')
+  assert.match(result.stdout, /GITHUB_TOKEN/)
+  assert.equal(`${result.stdout}${result.stderr}`.includes(token), false, 'the finding is masked')
+
+  const lintStaged = await import(resolve(projectDirectory, 'lint-staged.config.mjs'))
+  assert.equal(lintStaged.default['*'], 'secretlint', 'every staged file is scanned')
+  assert.match(
+    JSON.parse(readFileSync(resolve(projectDirectory, 'package.json'), 'utf8')).scripts.lint,
+    /&& secretlint --secretlintignore \.gitignore "\*\*\/\*"$/,
+  )
 })
 
 test('the generated Fastify project typechecks', () => {

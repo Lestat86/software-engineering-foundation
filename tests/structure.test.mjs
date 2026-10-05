@@ -146,6 +146,7 @@ test('shared tooling assets are complete and never introduce Prettier or npx', (
     'typescript/tsconfig.node.json',
     'git/commitlint.config.mjs',
     'git/lint-staged.config.mjs',
+    'git/.secretlintrc.json',
     'git/.husky/pre-commit',
     'git/.husky/commit-msg',
   ]

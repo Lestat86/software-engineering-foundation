@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "yarn workspaces foreach -Api --exclude {{PROJECT_NAME}} run dev",
     "build": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run build",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . --max-warnings=0 && secretlint --secretlintignore .gitignore \"**/*\"",
     "lint:fix": "eslint . --fix --max-warnings=0",
     "typecheck": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run typecheck",
     "test": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run test",

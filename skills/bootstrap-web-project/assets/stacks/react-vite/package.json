@@ -11,7 +11,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . --max-warnings=0 && secretlint --secretlintignore .gitignore \"**/*\"",
     "lint:fix": "eslint . --fix --max-warnings=0",
     "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
     "test": "vitest run",

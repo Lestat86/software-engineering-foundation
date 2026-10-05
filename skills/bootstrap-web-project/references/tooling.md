@@ -97,7 +97,7 @@ public names:
 
 ```json
 {
-  "lint": "eslint . --max-warnings=0",
+  "lint": "eslint . --max-warnings=0 && secretlint --secretlintignore .gitignore \"**/*\"",
   "lint:fix": "eslint . --fix --max-warnings=0",
   "typecheck": "tsc --noEmit",
   "validate": "yarn lint && yarn typecheck && yarn test && yarn build",
@@ -106,9 +106,20 @@ public names:
 ```
 
 `lint-staged` runs `eslint --fix --max-warnings=0` only for staged JavaScript
-and TypeScript files. The pre-commit hook does not run repository-wide
-typechecking or tests. The complete gate runs explicitly before merge and in CI
-when CI is enabled.
+and TypeScript files, and `secretlint` for every staged file. The pre-commit
+hook does not run repository-wide typechecking or tests. The complete gate runs
+explicitly before merge and in CI when CI is enabled.
+
+## Secret scanning
+
+For [`GIT-SECRET-001`](standards/git-workflow.md), `secretlint` with
+`@secretlint/secretlint-rule-preset-recommend`, configured in
+`.secretlintrc.json`, scans every staged file in the pre-commit hook and every
+file that Git does not ignore as part of `lint`. Reusing `.gitignore` as the
+scan's ignore list keeps the scope to what can be committed: a local `.env`
+stays out of the scan because it stays out of history. Findings are masked in
+the output, so the scan never prints the value it found. A detected secret is
+treated as compromised and rotated; removing it from the file is not enough.
 
 ## Style baseline
 
