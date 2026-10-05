@@ -182,7 +182,8 @@ for (const [server, root] of Object.entries(variants)) {
 
   test(`the ${server} monorepo runs every workspace test suite`, () => {
     assert.match(run(resolve(root, 'packages/shared'), binary('vitest'), ['run']), /2 passed/)
-    assert.match(run(resolve(root, 'apps/server'), binary('vitest'), ['run']), /6 passed/)
+    const serverTests = server === 'fastify' ? /10 passed/ : /6 passed/
+    assert.match(run(resolve(root, 'apps/server'), binary('vitest'), ['run']), serverTests)
     if (server === 'fastify') {
       assert.match(run(resolve(root, 'apps/client'), binary('vitest'), ['run']), /3 passed/)
     }

@@ -87,8 +87,9 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 1.1 — debito, soppressioni, complessità, SonarJS | ✅ fatto | `d0cda4d` | 0012 |
 | Fase 1.2 — secretlint | ✅ fatto | `ec44d3c` | 0013 |
 | Fase 1.3 — validatori di manifest ed eccezioni, flag `workflow` | ✅ fatto | `19dd0ce` | 0014 |
-| Fase 1.4 — dependency-cruiser | ✅ fatto | `feat/dependency-boundaries` | 0015 |
-| Fase 1.5 — test sugli schemi delle route Fastify | ☐ | — | — |
+| Fase 1.4 — dependency-cruiser | ✅ fatto | `35650d9` | 0015 |
+| Fase 1.5 — contratto delle route Fastify | ✅ fatto | `feat/fastify-route-schemas` | 0016 |
+| Manuale d'uso (`docs/manual.md`) | ✅ creato, aggiornato a ogni punto | `ae39ec2` | — |
 | Fase 1b — `yarn premerge` e template PR/MR | ☐ | — | — |
 | `sync-foundation` | ☐ | — | — |
 | Fase 2 — requisiti nel progetto, template di piano | ☐ | — | — |
@@ -96,7 +97,7 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/dependency-boundaries`.
+`feat/fastify-route-schemas`.
 
 Decisioni prese durante il lavoro:
 
@@ -116,6 +117,10 @@ Decisioni prese durante il lavoro:
 - **Cicli solo in ESLint:** dependency-cruiser non ripete `no-circular`, già
   coperto da `import/no-cycle`; si occupa di classi di dipendenza e confini
   tra workspace.
+- **Route Fastify:** invece di un test che elenca le route, un hook `onRoute`
+  in `buildApp()` rifiuta la registrazione di una route senza schema, quindi
+  l'applicazione non parte; l'eccezione per streaming e proxy è
+  `config.contractException`.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).

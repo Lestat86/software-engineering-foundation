@@ -122,6 +122,11 @@ later foundation update can tell your changes from its own.
 | `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries. |
 | `lint:secrets` | No secret in any file Git can commit. |
 
+**When a Fastify application starts**, including in every test that builds
+it: each route must declare a response schema, a `params` schema when its path
+has parameters, and a `body` schema when it accepts a body. A route that does
+not is refused at registration, so the application does not start.
+
 `git commit --no-verify` skips the hooks but not `lint`, so a skipped check
 still fails `validate` and CI.
 
@@ -140,6 +145,7 @@ still fails `validate` and CI.
 | `not-to-dev-dep` | Move the package to `dependencies` if production needs it, or keep the import in tests and tooling only. |
 | `no-non-package-json` | Declare the package in the `package.json` of the code that imports it. |
 | `no-client-to-server`, `no-server-to-client`, `no-package-to-app` | Move the shared code into `packages/shared` and import it from there. |
+| Fastify: `must declare a response schema`, `a params schema` or `a body schema` | Add the zod schema to the route's `schema` option. For a streaming or proxy route that cannot have a body schema, set `config: { contractException: 'why, and how the payload is bounded' }`. |
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |

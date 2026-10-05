@@ -10,6 +10,7 @@ import type { AppConfig } from './config.ts'
 import { greetingRoutes } from './features/greetings/routes.ts'
 import { healthRoutes } from './features/health/routes.ts'
 import { errorHandlerPlugin } from './plugins/error-handler.ts'
+import { enforceRouteContract } from './plugins/route-contracts.ts'
 import { securityPlugin } from './plugins/security.ts'
 
 export type BuildAppOptions = {
@@ -40,6 +41,8 @@ export const buildApp = async ({
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
   app.decorate('config', config)
+  // Added before any plugin so it sees every route, including encapsulated ones.
+  app.addHook('onRoute', enforceRouteContract)
 
   await app.register(sensible)
   await app.register(securityPlugin, { config })

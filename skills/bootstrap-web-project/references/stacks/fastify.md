@@ -20,6 +20,7 @@ The production template lives in `assets/stacks/fastify/`:
 | `src/server.ts` | Entry point with graceful shutdown through `close-with-grace` |
 | `src/plugins/security.ts` | Helmet, CORS allowlist and rate limiting, registered without encapsulation |
 | `src/plugins/error-handler.ts` | Stable `{ error: { code, message, issues? } }` contract for every failure |
+| `src/plugins/route-contracts.ts` | `onRoute` hook that refuses to register a route without its schemas |
 | `src/features/*/routes.ts` | Encapsulated feature plugins with zod request and response schemas |
 | `test/build-test-app.ts` | Builds the full application against isolated configuration |
 
@@ -57,12 +58,17 @@ peers as required.
 - **Rationale:** Schemas validate untrusted input before handlers run, give
   handlers inferred types and let response serialization enforce the output
   contract.
-- **Verification:** Route tests send missing, malformed, oversized and
-  unexpected fields and expect `VALIDATION_FAILED`; review that no route lacks
-  a schema.
+- **Verification:** `enforceRouteContract`, added as an `onRoute` hook in
+  `buildApp()` before any plugin, throws at registration when a route has no
+  response schema, has path parameters without a `params` schema, or accepts a
+  body without a `body` schema; the application therefore cannot start with
+  such a route. Route tests send missing, malformed, oversized and unexpected
+  fields and expect `VALIDATION_FAILED`.
 - **Sources:** [Fastify validation and serialization](https://fastify.dev/docs/latest/Reference/Validation-and-Serialization/), [fastify-type-provider-zod](https://github.com/turkerdev/fastify-type-provider-zod), `SEC-INPUT-001`.
 - **Exceptions:** Streaming or proxy routes document why a body schema cannot
-  apply and bound the payload another way.
+  apply and bound the payload another way, in the route's
+  `config.contractException`, which the hook accepts in place of a body
+  schema.
 
 ## `FASTIFY-PLUGIN-001` — features are encapsulated plugins
 

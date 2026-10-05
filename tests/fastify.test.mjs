@@ -125,7 +125,7 @@ test('the generated Fastify project typechecks', () => {
 
 test('the generated Fastify tests cover validation, limits and the error contract', () => {
   const output = run(binary('vitest'), ['run'])
-  assert.match(output, /6 passed/)
+  assert.match(output, /10 passed/)
 })
 
 test('the generated Fastify project builds and boots without a configured environment', () => {
