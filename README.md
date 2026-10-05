@@ -70,6 +70,9 @@ Next.js is intentionally outside the initial scope.
 
 ## Entry points
 
+- Claude Code users install the `sef` plugin from this repository:
+  `/plugin marketplace add <this repository>`, then
+  `/plugin install sef@software-engineering-foundation`.
 - People creating or maintaining a project start at the
   [user manual](docs/manual.md).
 - Agents bootstrapping a project start at

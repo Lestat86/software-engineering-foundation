@@ -28,6 +28,9 @@ of generic tutorials.
   repository too: the foundation passes the gate it ships.
 - Treat WCAG 2.2 AA as mandatory for every React profile.
 - Never print, commit, log or place secrets in fixtures.
+- Keep `.claude-plugin/plugin.json` at the version of `package.json`; the
+  plugin is the repository root, so every skill under `skills/`, agent under
+  `agents/` and hook in `hooks/hooks.json` ships with it.
 - Update `docs/manual.md` in the same change as any behavior a project user
   sees: a new check, script, option, generated file or failure message.
 

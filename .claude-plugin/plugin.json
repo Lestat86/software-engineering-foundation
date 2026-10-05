@@ -1,0 +1,8 @@
+{
+  "name": "sef",
+  "displayName": "Software Engineering Foundation",
+  "version": "2.0.0",
+  "description": "Bootstrap TypeScript web projects on the foundation, review changes against its requirements before a pull request, record exceptions, and keep agents from bypassing the quality gate.",
+  "license": "MIT",
+  "keywords": ["typescript", "quality", "review", "security", "accessibility"]
+}

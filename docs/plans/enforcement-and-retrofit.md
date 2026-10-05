@@ -96,11 +96,11 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 1b — Stryker | ⏸️ rinviato | — | — |
 | `sync-foundation` | ✅ fatto | `feat/sync-foundation` | 0019 |
 | Fase 2 — requisiti nel progetto, template di piano | ✅ fatto | `feat/project-knowledge` | 0020 |
-| Fase 3 — plugin e revisore | ☐ | — | — |
+| Fase 3 — plugin e revisore | ✅ fatto | `feat/claude-plugin` | 0021 |
 | Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/project-knowledge`.
+`feat/claude-plugin`.
 
 Decisioni prese durante il lavoro:
 
@@ -142,6 +142,15 @@ Decisioni prese durante il lavoro:
   `sync-foundation`.
 - **Template di piano in inglese**, sezioni in inglese; il controllo dei piani
   sta in `lint:foundation` (non in `premerge`), così gira anche in CI.
+- **Plugin `sef`:** la radice del repo è il plugin (marketplace con
+  `source: "./"`); `/sef:review` è una skill e non un comando (i comandi sono
+  mantenuti solo per compatibilità). Validato con `claude plugin validate` e
+  caricato con `claude --plugin-dir`; non ancora installato da marketplace in
+  una sessione reale. Manca il campo `author` (avviso del validatore), da
+  decidere.
+- **Stop hook con limite:** il campo `stop_hook_active` non è garantito dalla
+  documentazione, quindi dopo 2 blocchi sullo stesso stato del codice l'hook
+  lascia fermare l'agente invece di bloccarlo all'infinito.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).

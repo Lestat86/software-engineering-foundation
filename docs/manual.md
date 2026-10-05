@@ -18,6 +18,7 @@ this manual explains how to work with them day to day.
 - [Planning a feature](#planning-a-feature)
 - [Recording an exception](#recording-an-exception)
 - [Workflow modes](#workflow-modes)
+- [Using the Claude Code plugin](#using-the-claude-code-plugin)
 - [Updating a project to a new foundation version](#updating-a-project-to-a-new-foundation-version)
 - [Further reading](#further-reading)
 
@@ -34,8 +35,17 @@ Next.js is out of scope.
 
 ## Install the skill
 
-The `bootstrap-web-project` skill is a self-contained directory. Make it
-available to your agent:
+**With Claude Code, install the plugin.** It contains the bootstrap skill, the
+pre-pull-request reviewer, the exception skill and two hooks
+([Using the Claude Code plugin](#using-the-claude-code-plugin)):
+
+```text
+/plugin marketplace add <path or Git URL of this repository>
+/plugin install sef@software-engineering-foundation
+```
+
+**Without the plugin**, the `bootstrap-web-project` skill is a self-contained
+directory. Make it available to your agent:
 
 - **Claude Code, for every project:** copy or link
   `skills/bootstrap-web-project` to `~/.claude/skills/bootstrap-web-project`.
@@ -236,6 +246,41 @@ The mode is recorded and validated today. Later foundation releases will use
 it to adjust thresholds and the automated review loop; until then it documents
 the decision for reviewers and agents. Change it in
 `.engineering-foundation.yml` when the way the project is reviewed changes.
+
+## Using the Claude Code plugin
+
+The `sef` plugin adds:
+
+| Component | Use |
+| --- | --- |
+| `/sef:bootstrap-web-project` | Create a project, as described above. |
+| `/sef:review` | Review the current branch before a pull request. |
+| `/sef:record-exception` | Prepare an entry in `docs/exceptions.yml` for a deliberate deviation. |
+| `sef:foundation-reviewer` agent | Started by `/sef:review`; reviews the diff against the plan and the requirements. |
+| Hook before every shell command | Blocks `git commit --no-verify`, `git commit -n`, `HUSKY=0 git …` and `--no-verify` on push, merge and rebase. |
+| Hook when the agent stops | Runs `corepack yarn validate` if the code changed since it last passed, and sends failures back to the agent. |
+
+**`/sef:review`** runs the reviewer in a fresh context, so it judges the code
+rather than the intentions of whoever wrote it. The reviewer runs the gate,
+checks the diff against the plan's acceptance criteria and scope, checks the
+security reassessment and the requirements lint cannot verify, and fixes only
+trivial problems in a separate `fix(review): …` commit. Its report lists
+*Must fix*, *Should fix*, *To decide* and *Passed* items, each with a location
+and a requirement or plan section. Then:
+
+- in **assisted** mode you read the report and decide;
+- in **autonomous** mode the agent fixes the *Must fix* items and reviews
+  again, at most three rounds, then hands what remains to you. *To decide*
+  items always come to you.
+
+When the review is clean it runs `premerge` and drafts the pull request
+description.
+
+**The stop hook** runs only in foundation projects, at most once per state of
+the code. After two blocks on the same unchanged failure it lets the agent
+stop, so a failure the agent cannot fix comes back to you instead of looping.
+Set `SEF_STOP_GATE=off` to disable it for a session, or
+`SEF_STOP_GATE_COMMAND="corepack yarn lint"` to run a faster check.
 
 ## Updating a project to a new foundation version
 

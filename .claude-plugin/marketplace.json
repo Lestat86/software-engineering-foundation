@@ -1,0 +1,14 @@
+{
+  "name": "software-engineering-foundation",
+  "description": "The Software Engineering Foundation plugin for Claude Code.",
+  "owner": {
+    "name": "Software Engineering Foundation"
+  },
+  "plugins": [
+    {
+      "name": "sef",
+      "source": "./",
+      "description": "Bootstrap, pre-pull-request review, exceptions and quality-gate hooks for foundation projects."
+    }
+  ]
+}
