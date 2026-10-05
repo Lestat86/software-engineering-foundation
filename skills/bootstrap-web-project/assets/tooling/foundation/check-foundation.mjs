@@ -81,10 +81,8 @@ const checkPremerge = (manifest, report) => {
   if (!isFilled(premerge.baseRef)) {
     report.errors.push(`${MANIFEST_FILE}: premerge.baseRef must name the target branch`)
   }
-  for (const threshold of ['diffCoverage', 'mutationScore']) {
-    if (!isPercentage(premerge[threshold])) {
-      report.errors.push(`${MANIFEST_FILE}: premerge.${threshold} must be a percentage`)
-    }
+  if (!isPercentage(premerge.diffCoverage)) {
+    report.errors.push(`${MANIFEST_FILE}: premerge.diffCoverage must be a percentage`)
   }
 }
 

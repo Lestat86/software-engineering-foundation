@@ -12,4 +12,3 @@ workflow: "{{WORKFLOW}}"
 premerge:
   baseRef: "origin/main"
   diffCoverage: 80
-  mutationScore: 60

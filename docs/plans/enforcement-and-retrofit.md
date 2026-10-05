@@ -90,14 +90,17 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 1.4 — dependency-cruiser | ✅ fatto | `35650d9` | 0015 |
 | Fase 1.5 — contratto delle route Fastify | ✅ fatto | `feat/fastify-route-schemas` | 0016 |
 | Manuale d'uso (`docs/manual.md`) | ✅ creato, aggiornato a ogni punto | `ae39ec2` | — |
-| Fase 1b — `yarn premerge` e template PR/MR | ☐ | — | — |
+| Fase 1b — template PR/MR, Secret Detection GitLab | ✅ fatto | `4c52ce0` | — |
+| Fase 1b — `yarn premerge` con copertura sul diff | ✅ fatto | `01e37c9` | 0017 |
+| Fase 1b — Knip | ✅ fatto | `01b3ecd` | 0018 |
+| Fase 1b — Stryker | ⏸️ rinviato | — | — |
 | `sync-foundation` | ☐ | — | — |
 | Fase 2 — requisiti nel progetto, template di piano | ☐ | — | — |
 | Fase 3 — plugin e revisore | ☐ | — | — |
 | Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
 
 I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`feat/fastify-route-schemas`.
+`feat/premerge`.
 
 Decisioni prese durante il lavoro:
 
@@ -121,6 +124,17 @@ Decisioni prese durante il lavoro:
   in `buildApp()` rifiuta la registrazione di una route senza schema, quindi
   l'applicazione non parte; l'eccezione per streaming e proxy è
   `config.contractException`.
+- **Stryker rinviato** (scelta 3, 2026-10-05): con Stryker 10 e
+  `@stryker-mutator/vitest-runner` 10 la mutazione delle sole righe cambiate
+  funziona su Fastify e `shared`, ma su React (jsdom) e Nest (SWC) i mutanti
+  non eseguono nessun test (`testsCompleted: 0`) e risultano tutti
+  "sopravvissuti", pur con la copertura per test corretta. Escluse come cause:
+  filtro `related`, `setupFiles`, plugin Vite React, pattern di `include`,
+  concorrenza. Da riprendere con una versione successiva o una issue upstream;
+  la soglia `mutationScore` è stata tolta dal manifest finché non serve.
+- **Template corretti grazie a Knip:** rimossi `pino-pretty` (mai usato) e
+  cinque export locali; tolta la riga ridondante `collection` da
+  `nest-cli.json`.
 - **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
   `.config/foundation/requirements.json`, scritto dal generatore (da
   aggiornare con `sync-foundation`).

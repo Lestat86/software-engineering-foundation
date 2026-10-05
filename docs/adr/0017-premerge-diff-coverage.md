@@ -28,8 +28,8 @@ person opening the pull request attests to it.
 - Fail below `premerge.diffCoverage`, 80 by default, listing the uncovered
   lines; warn when the working tree is not committed; end with
   `premerge: passed on <sha>` for the pull request checklist.
-- Record `baseRef`, `diffCoverage` and `mutationScore` in the manifest,
-  validated by `check-foundation.mjs`.
+- Record `baseRef` and `diffCoverage` in the manifest, validated by
+  `check-foundation.mjs`.
 - Add `@vitest/coverage-v8`, pinned to the exact vitest version it requires.
 
 ## Consequences
@@ -37,7 +37,10 @@ person opening the pull request attests to it.
 A branch that adds untested code fails before review, with the lines to test.
 The measure counts statements, not branches: a changed line whose statement
 ran is covered even if only one side of a condition was exercised. Mutation
-testing, recorded with its own threshold, complements it.
+testing would measure whether the tests assert anything; it is postponed (see
+the plan): with Stryker 10 and its Vitest runner, mutants of the React and
+Nest templates ran no test at all and were all reported as survived, which
+would make a mutation threshold report false failures.
 
 `premerge` runs the test suite once, with coverage, instead of running it
 again after `validate`. Untracked files are not part of the diff; the
