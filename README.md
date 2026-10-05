@@ -21,6 +21,8 @@ risk-based security standard, shared tooling assets, the React with Vite,
 Fastify, Nest, Supabase and full-stack monorepo profiles and the optional
 GitLab CI baseline are established. Every template is verified on each test run
 by generating a project and running its lint, typecheck, tests and build. The
+lint gate also checks secrets, tracked debt, described suppressions, bounded
+complexity, the project record and the exception register. The
 first stable release follows the end-to-end validation of generated projects.
 
 ## Supported scope
@@ -50,6 +52,15 @@ Next.js is intentionally outside the initial scope.
 - R2 is the default for authenticated applications.
 - CI templates are optional.
 - Secrets, credentials and authentication keys must never be printed.
+- Secrets are scanned in every staged file and in every committable file by
+  `lint`.
+- Every `TODO` or `FIXME` references its issue, as in `TODO(#123)`, and
+  commented-out code is removed.
+- Every lint suppression names its rules and states a reason.
+- Cognitive complexity is bounded at 15 per function and nesting at four
+  levels.
+- Every project records its workflow mode, `assisted` or `autonomous`, and its
+  exceptions in an expiring register checked by `lint`.
 
 ## Entry points
 

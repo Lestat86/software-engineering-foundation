@@ -1,6 +1,6 @@
 # Piano — enforcement deterministico, revisore pre-PR e retrofit
 
-- **Stato:** concordato, in avvio
+- **Stato:** in corso (vedi [Avanzamento](#avanzamento))
 - **Data:** 2026-10-05
 - **Repo di lavoro:** fork `Lestat86/software-engineering-foundation`
   (upstream `francescocretti/software-engineering-foundation`)
@@ -76,9 +76,46 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Evidenze ASVS | Controllo di presenza del file del livello | — | Revisore sul contenuto |
 | Test sul codice cambiato | Copertura sul diff (compatibile con `TEST-COVERAGE-001`); Stryker sul diff | — | Revisore |
 | Commit con un solo scopo | — | — | Revisore |
-| Qualità e struttura | `eslint-plugin-sonarjs`, regole di complessità, `react/jsx-no-bind`, dependency-cruiser | — | — |
+| Qualità e struttura | `eslint-plugin-sonarjs`, regole di complessità, dependency-cruiser | — | — |
 | Gate completo | `yarn validate` | Hook di fine lavoro se sono cambiati file | — |
 | Anti-aggiramento | Soglie che non scendono; zero test instabili | Blocco di `--no-verify` | — |
+
+## Avanzamento
+
+| Fase / punto | Stato | Branch / commit | ADR |
+| --- | --- | --- | --- |
+| Fase 1.1 — debito, soppressioni, complessità, SonarJS | ✅ fatto | `d0cda4d` | 0012 |
+| Fase 1.2 — secretlint | ✅ fatto | `ec44d3c` | 0013 |
+| Fase 1.3 — validatori di manifest ed eccezioni, flag `workflow` | ✅ fatto | `19dd0ce` | 0014 |
+| Fase 1.4 — dependency-cruiser | ◐ in corso | — | — |
+| Fase 1.5 — test sugli schemi delle route Fastify | ☐ | — | — |
+| Fase 1b — `yarn premerge` e template PR/MR | ☐ | — | — |
+| `sync-foundation` | ☐ | — | — |
+| Fase 2 — requisiti nel progetto, template di piano | ☐ | — | — |
+| Fase 3 — plugin e revisore | ☐ | — | — |
+| Fase 4 — retrofit del pilota AntiPhishing-Bot | ☐ | — | — |
+
+I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
+`feat/foundation-validators`.
+
+Decisioni prese durante il lavoro:
+
+- **Versione:** le regole della Fase 1 fanno fallire codice che passava il gate
+  2.x, quindi sono un cambio major: la foundation passa a 3.0.0 al rilascio
+  (non ancora fatto, i commit portano `BREAKING CHANGE`).
+- **`react/jsx-no-bind` escluso:** `tooling.md` esclude esplicitamente i
+  divieti sugli handler inline e `CONTRIBUTING.md` chiede di non rendere
+  universale una preferenza di stile. Se è uno standard di team, va nella
+  config del progetto o in `@black-bytes/eslint-config`.
+- **`sonarjs/null-dereference` spento su TypeScript:** ignora i tipi e dava
+  falsi positivi su valori già garantiti da `strictNullChecks`.
+- **Hotspot di sicurezza SonarJS:** restano attivi; un punto rivisto e corretto
+  si sopprime con motivazione, che documenta la revisione.
+- **Script `lint` diviso** in `lint:foundation`, `lint:code` e `lint:secrets`;
+  `lint` li esegue tutti, quindi `validate` e la CI li coprono.
+- **`docs/exceptions.yml`** è generato vuoto; gli ID ammessi vengono da
+  `.config/foundation/requirements.json`, scritto dal generatore (da
+  aggiornare con `sync-foundation`).
 
 ## Fasi
 
@@ -112,7 +149,6 @@ accanto a `generate-project.mjs`.
 - Regola sui TODO/FIXME con riferimento `#123`.
 - `eslint-comments` con `require-description`.
 - `eslint-plugin-sonarjs` e regole di complessità.
-- `react/jsx-no-bind` nel profilo React.
 - dependency-cruiser (cicli e confini).
 - `docs/exceptions.yml` con validatore.
 - Validatore di `.engineering-foundation.yml`, con il campo `workflow`.
