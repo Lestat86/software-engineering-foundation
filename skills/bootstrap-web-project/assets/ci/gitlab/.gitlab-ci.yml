@@ -68,7 +68,13 @@ build:
   script:
     - corepack yarn build
 
-# Optional: GitLab Secret Detection. Enabling it does not permit committing or
-# printing secrets; it is a second line of defense.
-# include:
-#   - template: Jobs/Secret-Detection.gitlab-ci.yml
+# GitLab Secret Detection is a second line of defense behind the secretlint
+# scan in `lint`: it also scans the commits of a merge request. It runs its own
+# analyzer image, so it inherits none of the Node.js defaults.
+include:
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+secret_detection:
+  stage: verify
+  inherit:
+    default: false

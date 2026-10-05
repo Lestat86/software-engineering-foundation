@@ -12,7 +12,9 @@ on merge requests, the default branch and tags:
 1. `install`: immutable Yarn installation that populates the project-local
    cache keyed on `yarn.lock`;
 2. `verify`: `lint`, `typecheck`, `test` and `build` as parallel jobs, each
-   restoring the cache and installing immutably.
+   restoring the cache and installing immutably, and GitLab Secret Detection,
+   included from the GitLab template, moved to `verify` and inheriting none of
+   the Node.js defaults because it runs its own analyzer image.
 
 Every job uses the Node.js image matching the pinned major, invokes Yarn through
 Corepack, disables Husky and contains no deployment, environment or release
@@ -55,5 +57,5 @@ baseline.
 - **Verification:** The generated-project test rejects environment dumps and
   tracing in the template; review `script` changes in merge requests.
 - **Sources:** [GitLab CI/CD variables](https://docs.gitlab.com/ci/variables/), `CORE-LOG-001`, `GIT-SECRET-001`.
-- **Exceptions:** None. GitLab Secret Detection may be added as an opt-in
-  include; it does not weaken this requirement.
+- **Exceptions:** None. GitLab Secret Detection, included by the template,
+  complements the secretlint scan of `lint`; neither weakens this requirement.

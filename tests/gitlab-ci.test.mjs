@@ -43,6 +43,13 @@ test('the pipeline runs the complete gate reproducibly on the pinned Node major'
   assert.doesNotMatch(pipeline, /\{\{[A-Z_]+\}\}/, 'unresolved placeholder')
 })
 
+test('GitLab Secret Detection runs in the verify stage without the Node.js defaults', () => {
+  const pipeline = readFileSync(resolve(withCi, '.gitlab-ci.yml'), 'utf8')
+
+  assert.match(pipeline, /^include:\n {2}- template: Jobs\/Secret-Detection\.gitlab-ci\.yml$/m)
+  assert.match(pipeline, /^secret_detection:\n {2}stage: verify\n {2}inherit:\n {4}default: false$/m)
+})
+
 test('the pipeline contains no deployment logic and never prints the environment', () => {
   const pipeline = readFileSync(resolve(withCi, '.gitlab-ci.yml'), 'utf8')
   const scriptLines = pipeline.split('\n').filter((line) => /^ +- /.test(line))

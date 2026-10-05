@@ -86,7 +86,8 @@ hooks are never installed into a parent repository.
 | `.dependency-cruiser.mjs` | Dependency class and boundary rules. |
 | `.secretlintrc.json` | Secret scanning rules. |
 | `.husky/`, `commitlint.config.mjs`, `lint-staged.config.mjs` | Git hooks: commit message and staged-file checks. |
-| `.gitlab-ci.yml` | Only with `--ci gitlab`. |
+| `.github/pull_request_template.md`, `.gitlab/merge_request_templates/Default.md` | Pull and merge request templates with the pre-merge checklist; keep the one for your platform. |
+| `.gitlab-ci.yml` | Only with `--ci gitlab`: the gate jobs and GitLab Secret Detection. |
 
 Files under `.config/` and the dotfiles above are copied from the foundation.
 Prefer extending them through the options they export, such as

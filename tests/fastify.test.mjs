@@ -42,6 +42,8 @@ test('the generated Fastify project is complete and fully resolved', () => {
     '.husky/pre-commit',
     '.secretlintrc.json',
     '.dependency-cruiser.mjs',
+    '.github/pull_request_template.md',
+    '.gitlab/merge_request_templates/Default.md',
     'eslint.config.mjs',
     'src/app.ts',
     'src/config.constants.ts',
@@ -161,4 +163,15 @@ test('the generated Fastify configuration fails fast without leaking values', ()
   assert.match(output, /PORT/)
   assert.match(output, /CORS_ORIGINS/)
   assert.doesNotMatch(output, /not-a-port|javascript:/)
+})
+
+test('the pull and merge request templates ask for the premerge attestation', () => {
+  for (const template of [
+    '.github/pull_request_template.md',
+    '.gitlab/merge_request_templates/Default.md',
+  ]) {
+    const content = readFileSync(resolve(projectDirectory, template), 'utf8')
+    assert.match(content, /^- \[ \] `corepack yarn premerge` passed on commit `<sha>`/m, template)
+    assert.match(content, /SEC-RISK-003/, template)
+  }
 })
