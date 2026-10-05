@@ -101,8 +101,10 @@ Cosa non è controllato dopo il bootstrap, e dove va.
 | Fase 4 — prova generale su una copia di AntiPhishing-Bot | ✅ fatta, buchi corretti | `fix/retrofit-rehearsal` | 0022 |
 | Fase 4 — applicazione al pilota AntiPhishing-Bot | ⏸️ rinviata (decisione 2026-10-05) | — | — |
 
-I branch sono in catena sul fork, nessuno è pushato. La catena attuale è
-`fix/retrofit-rehearsal`.
+I branch sono in catena sul fork, nessuno è pushato. Tutta la catena è in `main` del fork (fast-forward, 2026-10-05).
+Installazione verificata da GitHub (`Lestat86/software-engineering-foundation`,
+scope progetto) e, in una sessione reale, l'hook che blocca
+`git commit --no-verify`.
 
 Decisioni prese durante il lavoro:
 

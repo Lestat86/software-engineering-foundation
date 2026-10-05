@@ -41,9 +41,16 @@ pre-pull-request reviewer, the exception and retrofit skills and two hooks
 ([Using the Claude Code plugin](#using-the-claude-code-plugin)):
 
 ```text
-/plugin marketplace add <path or Git URL of this repository>
+/plugin marketplace add <owner>/<repository>
 /plugin install sef@software-engineering-foundation
 ```
+
+The source is the GitHub repository of the foundation, for example
+`Lestat86/software-engineering-foundation`, a Git URL or a local path. From
+a terminal, `claude plugin marketplace add <source> --scope project` and
+`claude plugin install sef@software-engineering-foundation --scope project`
+record both in the project's `.claude/settings.json`: commit that file and
+everyone who opens the project in Claude Code is offered the same plugin.
 
 **Without the plugin**, the `bootstrap-web-project` skill is a self-contained
 directory. Make it available to your agent:
