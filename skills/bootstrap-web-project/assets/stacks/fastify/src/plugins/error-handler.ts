@@ -11,7 +11,7 @@ import {
   HTTP_NOT_FOUND,
 } from '../http.constants.ts'
 
-export type ErrorResponse = {
+type ErrorResponse = {
   error: {
     code: string
     message: string

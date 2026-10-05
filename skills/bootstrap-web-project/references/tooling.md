@@ -137,9 +137,19 @@ import another feature's internals, as further `forbidden` entries.
 
 ## Pre-merge gate
 
-`premerge` runs `lint`, `typecheck` and `build`, then
+`premerge` runs `lint`, `typecheck`, `build` and Knip, then
 `.config/foundation/premerge.mjs`, which runs `test` with V8 coverage and
-compares the result with the lines the branch changes:
+compares the result with the lines the branch changes.
+
+Knip, configured by `knip.config.js`, rejects unused files, exports and
+dependencies across the project. Its `ignoreDependencies` list only names
+packages used in ways Knip cannot trace: tools run by the Git hooks, the
+secretlint preset loaded from `.secretlintrc.json`, and dependencies a profile
+declares before the first import, such as monorepo workspace packages and the
+Supabase client. Remove those last entries once the code imports them. Mark an
+export that is deliberate public API with a `/** @public */` comment.
+
+The coverage step works as follows:
 
 1. The base is `premerge.baseRef` from `.engineering-foundation.yml`,
    `origin/main` by default; `FOUNDATION_BASE_REF` overrides it, for example

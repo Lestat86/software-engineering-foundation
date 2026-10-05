@@ -42,6 +42,7 @@ test('the generated Fastify project is complete and fully resolved', () => {
     '.husky/pre-commit',
     '.secretlintrc.json',
     '.dependency-cruiser.mjs',
+    'knip.config.js',
     '.github/pull_request_template.md',
     '.gitlab/merge_request_templates/Default.md',
     'eslint.config.mjs',
@@ -174,4 +175,23 @@ test('the pull and merge request templates ask for the premerge attestation', ()
     assert.match(content, /^- \[ \] `corepack yarn premerge` passed on commit `<sha>`/m, template)
     assert.match(content, /SEC-RISK-003/, template)
   }
+})
+
+test('the generated Fastify project reports unused exports and dependencies', (context) => {
+  const knip = () => spawnSync(binary('knip'), ['--no-progress'], {
+    cwd: projectDirectory,
+    encoding: 'utf8',
+    env: { ...process.env, NO_COLOR: '1' },
+  })
+  const unusedPath = resolve(projectDirectory, 'src/features/greetings/unused.ts')
+  context.after(() => rmSync(unusedPath, { force: true }))
+
+  const clean = knip()
+  assert.equal(clean.status, 0, clean.stdout)
+  assert.doesNotMatch(clean.stdout, /Configuration hints/, 'no ignore entry is unnecessary')
+
+  writeFileSync(unusedPath, 'export const forgotten = (): string => \'never imported\'\n')
+  const dirty = knip()
+  assert.equal(dirty.status, 1)
+  assert.match(dirty.stdout, /Unused files \(1\)\nsrc\/features\/greetings\/unused\.ts/)
 })

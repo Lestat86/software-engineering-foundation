@@ -156,7 +156,8 @@ must not weaken this baseline.
   it tends to become permanent and lose its context.
 - **Verification:** The `foundation/todo-issue-reference` rule in the shared
   ESLint configuration rejects a marker without an issue reference;
-  `sonarjs/no-commented-code` rejects commented-out code.
+  `sonarjs/no-commented-code` rejects commented-out code; Knip in `premerge`
+  rejects unused files and exports.
 - **Sources:** [SonarSource rule S125 — commented-out code](https://rules.sonarsource.com/javascript/RSPEC-125/), practitioner experience with production TypeScript applications.
 - **Exceptions:** A project using a tracker whose references do not match
   `#123` configures its own pattern through the rule's `reference` option

@@ -19,7 +19,7 @@ const originList = z
   .transform((value) => value.split(',').map((origin) => origin.trim()).filter(Boolean))
   .pipe(z.array(z.url({ protocol: /^https?$/ })))
 
-export const configSchema = z.object({
+const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   HOST: z.string().min(1).default('127.0.0.1'),
   PORT: z.coerce.number().int().min(0).max(MAX_TCP_PORT).default(DEFAULT_PORT),

@@ -9,6 +9,7 @@ const defaultJavaScriptFiles = ['**/*.{js,mjs,cjs}']
 // CORE-DEBT-001: a debt marker names the issue that tracks it. The default
 // accepts a GitLab-style reference such as `TODO(#123)`; a project using another
 // tracker passes its own pattern as the rule option.
+/** @public */
 export const defaultIssueReference = '#\\d+'
 
 const todoIssueReferenceRule = {
@@ -49,6 +50,7 @@ const todoIssueReferenceRule = {
   },
 }
 
+/** @public Registered by the shared configurations; exported for project rules. */
 export const foundationPlugin = {
   meta: { name: 'foundation' },
   rules: { 'todo-issue-reference': todoIssueReferenceRule },
@@ -83,6 +85,7 @@ export const codeHealthRules = {
 
 // Numeric literals stay readable in files that are themselves declarations of
 // values (tool configuration) or the specification of a behavior (tests).
+/** @public Spread into `literalExemptFiles` to extend rather than replace the defaults. */
 export const defaultLiteralExemptFiles = [
   '**/*.{test,spec}.{js,mjs,cjs}',
   '**/test/**/*.{js,mjs,cjs}',

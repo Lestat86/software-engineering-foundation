@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common'
 import type { Response } from 'express'
 
-export type ErrorResponse = {
+type ErrorResponse = {
   error: {
     code: string
     message: string

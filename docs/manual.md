@@ -85,6 +85,7 @@ hooks are never installed into a parent repository.
 | `.config/typescript/` | The shared strict TypeScript configurations. |
 | `.config/foundation/` | The record and exception checker and the list of known requirement identifiers. |
 | `.dependency-cruiser.mjs` | Dependency class and boundary rules. |
+| `knip.config.js` | Unused file, export and dependency detection, run by `premerge`. |
 | `.secretlintrc.json` | Secret scanning rules. |
 | `.husky/`, `commitlint.config.mjs`, `lint-staged.config.mjs` | Git hooks: commit message and staged-file checks. |
 | `.github/pull_request_template.md`, `.gitlab/merge_request_templates/Default.md` | Pull and merge request templates with the pre-merge checklist; keep the one for your platform. |
@@ -135,9 +136,10 @@ still fails `validate` and CI.
 
 ## Before a pull request
 
-Run `corepack yarn premerge` on a committed branch. It runs lint, typecheck and
-build, then the tests with coverage, and checks that the lines your branch
-changes are exercised by tests:
+Run `corepack yarn premerge` on a committed branch. It runs lint, typecheck,
+build and Knip, which rejects unused files, exports and dependencies, then the
+tests with coverage, and checks that the lines your branch changes are
+exercised by tests:
 
 ```text
 diff coverage: 92.3% of 13 changed statement lines against origin/main (minimum 80%)
@@ -170,6 +172,7 @@ premerge: passed on 4c52ce0a…
 | `no-non-package-json` | Declare the package in the `package.json` of the code that imports it. |
 | `no-client-to-server`, `no-server-to-client`, `no-package-to-app` | Move the shared code into `packages/shared` and import it from there. |
 | Fastify: `must declare a response schema`, `a params schema` or `a body schema` | Add the zod schema to the route's `schema` option. For a streaming or proxy route that cannot have a body schema, set `config: { contractException: 'why, and how the payload is bounded' }`. |
+| Knip: unused file, export or dependency | Delete what nothing uses. For an export that is deliberate public API, add `/** @public */` above it. For a package used in a way Knip cannot see, add it to `ignoreDependencies` in `knip.config.js` with a comment saying how it is used. |
 | `premerge`: diff coverage below the minimum | Add tests for the listed `file:lines`, or remove the code if nothing needs it. |
 | `premerge`: base not found | `git fetch origin`, or set `FOUNDATION_BASE_REF` to the branch you will merge into. |
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |

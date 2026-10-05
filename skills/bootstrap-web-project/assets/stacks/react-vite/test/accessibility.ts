@@ -12,7 +12,7 @@ const componentScanOptions: RunOptions = {
   },
 }
 
-export const describeResults = (results: Result[]): string =>
+const describeResults = (results: Result[]): string =>
   results
     .map((result) => {
       const targets = result.nodes.map((node) => node.target.join(' ')).join(', ')
@@ -20,7 +20,7 @@ export const describeResults = (results: Result[]): string =>
     })
     .join('\n')
 
-export const scanAccessibility = async (context: Element): Promise<AxeResults> =>
+const scanAccessibility = async (context: Element): Promise<AxeResults> =>
   axe.run(context, componentScanOptions)
 
 /**

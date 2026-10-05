@@ -236,6 +236,28 @@ const describeMonorepoWorkspaces = ({
   }
 }
 
+// Dependencies a profile declares before the application's first import of
+// them, so Knip would report them as unused in a freshly generated project.
+const knipProfileIgnores = {
+  monorepo: (scope) => `/^@${scope}\\//`,
+  supabase: () => `'@supabase/supabase-js'`,
+}
+
+const describeKnipIgnores = (appliedProfiles, scope) => {
+  const entries = appliedProfiles
+    .filter((profileName) => profileName in knipProfileIgnores)
+    .map((profileName) => knipProfileIgnores[profileName](scope))
+  if (entries.length === 0) {
+    return ''
+  }
+  return [
+    '',
+    '    // Declared by the template before the first import. Remove each entry',
+    '    // once the code imports it, so an unused declaration is reported again.',
+    ...entries.map((entry) => `    ${entry},`),
+  ].join('\n')
+}
+
 /**
  * Lists every profile the generation applies, in application order, and maps
  * each workspace directory to its profile so the project manifest records the
@@ -368,6 +390,7 @@ export const generateProject = ({
     SECURITY_LEVEL: securityLevel,
     SECURITY_RATIONALE: securityRationale,
     SCOPE: projectName,
+    KNIP_PROFILE_IGNORES: describeKnipIgnores(appliedProfiles, projectName),
     WORKFLOW: workflow,
     WORKSPACES_YAML: JSON.stringify(workspaceMap),
     YARN_VERSION: versions.runtime.yarn,

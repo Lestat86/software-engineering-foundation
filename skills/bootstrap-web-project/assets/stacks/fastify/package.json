@@ -20,7 +20,7 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "premerge": "yarn lint && yarn typecheck && yarn build && node .config/foundation/premerge.mjs",
+    "premerge": "yarn lint && yarn typecheck && yarn build && knip --no-progress && node .config/foundation/premerge.mjs",
     "validate": "yarn lint && yarn typecheck && yarn test && yarn build",
     "postinstall": "husky"
   },

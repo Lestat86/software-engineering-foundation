@@ -17,6 +17,8 @@ export default defineConfig(
       'tests/.generated/**',
       // Stack templates are verified through the generated project tests.
       'skills/bootstrap-web-project/assets/stacks/**',
+      // Contains a generator placeholder; linted after generation.
+      'skills/bootstrap-web-project/assets/tooling/architecture/knip.config.js',
     ],
   },
   createJavaScriptConfig({
