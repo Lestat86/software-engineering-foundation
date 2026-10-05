@@ -83,7 +83,12 @@ test('diff coverage counts only changed lines that carry a statement', () => {
 
   assert.deepEqual(
     measureDiffCoverage({ changedLines, coverage, projectDirectory: projectRoot }),
-    { covered: 1, total: 2, uncovered: [{ file: 'src/a.ts', lines: [5] }] },
+    {
+      covered: 1,
+      total: 2,
+      uncovered: [{ file: 'src/a.ts', lines: [5] }],
+      unmeasured: ['src/server.ts'],
+    },
   )
 })
 
@@ -120,9 +125,10 @@ test('premerge rejects changed code that no test exercises and passes once it is
 
   const untested = runPremerge({ projectDirectory, run, env })
   assert.equal(untested.errors.length, 1, untested.errors.join('\n'))
-  // The declaration runs when the module loads; the two body lines never run.
-  assert.match(untested.errors[0], /^diff coverage 33\.3% is below 80%$/)
-  assert.ok(untested.lines.some((line) => /not covered: src\/features\/greetings\/routes\.ts:\d+,\d+$/.test(line)))
+  // The declaration runs when the module loads, but the function is never
+  // called: its declaration line and its two body lines are all uncovered.
+  assert.match(untested.errors[0], /^diff coverage 0\.0% is below 80%$/)
+  assert.ok(untested.lines.some((line) => /not covered: src\/features\/greetings\/routes\.ts:\d+,\d+,\d+$/.test(line)))
 
   writeFileSync(
     resolve(projectDirectory, 'src/features/greetings/shout.test.ts'),
@@ -175,4 +181,32 @@ test('baselines may shrink or be created, never grow', () => {
   assert.deepEqual(measure(undefined), [{ file: 'eslint-suppressions.json', before: undefined, after: 2 }])
   assert.deepEqual(measure(suppressions(3)), [{ file: 'eslint-suppressions.json', before: 3, after: 2 }])
   assert.deepEqual(measure(suppressions(1)), [{ file: 'eslint-suppressions.json', before: 1, after: 2 }])
+})
+
+test('a one-line function that no test calls is not covered by its loaded declaration', () => {
+  const coverage = {
+    '/project/src/a.ts': {
+      statementMap: { 0: { start: { line: 3 } } },
+      s: { 0: 1 },
+      fnMap: { 0: { loc: { start: { line: 3 } } } },
+      f: { 0: 0 },
+    },
+  }
+  const result = measureDiffCoverage({
+    changedLines: new Map([['src/a.ts', new Set([3])]]),
+    coverage,
+    projectDirectory: '/project',
+  })
+  assert.deepEqual(result.uncovered, [{ file: 'src/a.ts', lines: [3] }])
+})
+
+test('premerge fails instead of passing when no coverage report is produced', () => {
+  const noReport = (command, args, cwd, options) => {
+    if (command === 'corepack') {
+      return { status: 0, stdout: '' }
+    }
+    return exec(command, args, cwd, options)
+  }
+  const report = runPremerge({ projectDirectory, run: noReport, env: { FOUNDATION_BASE_REF: 'main' } })
+  assert.equal(report.errors.length > 0, true)
 })

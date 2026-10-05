@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
@@ -55,8 +55,18 @@ const lineHits = (fileCoverage) => {
     const line = location.start.line
     hits.set(line, (hits.get(line) ?? false) || fileCoverage.s[id] > 0)
   }
+  // A function declared on a line but never called leaves that line uncovered,
+  // even though the declaration itself ran when the module loaded.
+  for (const [id, fn] of Object.entries(fileCoverage.fnMap ?? {})) {
+    if (fileCoverage.f[id] === 0) {
+      hits.set(fn.loc.start.line, false)
+    }
+  }
   return hits
 }
+
+const SOURCE_FILE = /\.[cm]?[jt]sx?$/
+const TEST_FILE = /((^|\/)(test|e2e)\/)|(\.(test|spec)\.[cm]?[jt]sx?$)/
 
 /**
  * Counts the changed lines that carry a statement and how many of them ran.
@@ -64,11 +74,14 @@ const lineHits = (fileCoverage) => {
  * declared by the test configuration, such as a test or an entry point.
  */
 export const measureDiffCoverage = ({ changedLines, coverage, projectDirectory }) => {
-  const result = { covered: 0, total: 0, uncovered: [] }
+  const result = { covered: 0, total: 0, uncovered: [], unmeasured: [] }
 
   for (const [file, lines] of changedLines) {
     const fileCoverage = coverage[resolve(projectDirectory, file)]
     if (fileCoverage === undefined) {
+      if (SOURCE_FILE.test(file) && !TEST_FILE.test(file) && lines.size > 0) {
+        result.unmeasured.push(file)
+      }
       continue
     }
     const hits = lineHits(fileCoverage)
@@ -190,6 +203,12 @@ export const runPremerge = ({ projectDirectory, run = defaultRun, env = process.
     report.warnings.push(`uncommitted changes: the result does not describe commit ${head}`)
   }
 
+  // Reports of an earlier run would let a run that produced none pass, so the
+  // directory this script owns is cleared first.
+  const packageDirectories = ['.', ...Object.keys(manifest.workspaces ?? {})]
+  for (const directory of packageDirectories) {
+    rmSync(join(projectDirectory, directory, COVERAGE_DIRECTORY), { force: true, recursive: true })
+  }
   const testRun = run('corepack', [
     'yarn',
     'test',
@@ -206,13 +225,26 @@ export const runPremerge = ({ projectDirectory, run = defaultRun, env = process.
     'diff', '--relative', '--unified=0', '--no-color', '--diff-filter=AMR',
     mergeBase.stdout.trim(),
   ])
-  const coverage = readCoverage(projectDirectory, ['.', ...Object.keys(manifest.workspaces ?? {})])
+  const coverage = readCoverage(projectDirectory, packageDirectories)
+  if (Object.keys(coverage).length === 0) {
+    report.errors.push(
+      `no coverage report in ${COVERAGE_DIRECTORY}: install @vitest/coverage-v8 at the vitest `
+      + 'version of each workspace and set coverage.include in its vitest configuration',
+    )
+    return { ...report, head }
+  }
   const diffCoverage = measureDiffCoverage({
     changedLines: parseChangedLines(diff),
     coverage,
     projectDirectory,
   })
   const measured = percentage(diffCoverage)
+  if (diffCoverage.unmeasured.length > 0) {
+    report.warnings.push(
+      `changed source outside the coverage scope: ${diffCoverage.unmeasured.join(', ')}; `
+      + 'check coverage.include if these files should be tested',
+    )
+  }
 
   report.lines.push(
     `diff coverage: ${measured.toFixed(1)}% of ${String(diffCoverage.total)} changed `
