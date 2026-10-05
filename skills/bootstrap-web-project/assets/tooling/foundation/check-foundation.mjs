@@ -20,6 +20,7 @@ const CI_PROFILES = new Set(['none', 'gitlab'])
 const SEMANTIC_VERSION = /^\d+\.\d+\.\d+$/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const REQUIRED_EXCEPTION_FIELDS = ['id', 'scope', 'justification', 'owner', 'expires']
+const PERCENT = 100
 
 // Dependencies that bring authentication, payments or identity data: each is an
 // R2 trigger, so an R1 project that installs one must be reclassified
@@ -39,6 +40,8 @@ const R2_SIGNALS = [
 ]
 
 const isFilled = (value) => typeof value === 'string' && value.trim() !== ''
+
+const isPercentage = (value) => Number.isFinite(value) && value >= 0 && value <= PERCENT
 
 const readYaml = (path) => parse(readFileSync(path, 'utf8'))
 
@@ -69,6 +72,18 @@ const checkSecurity = (manifest, dependencyNames, report) => {
         `${MANIFEST_FILE}: R1 excludes authentication and payments, but ${signals.join(', ')} `
         + 'suggest an R2 trigger; reassess the classification (SEC-RISK-003)',
       )
+    }
+  }
+}
+
+const checkPremerge = (manifest, report) => {
+  const premerge = manifest.premerge ?? {}
+  if (!isFilled(premerge.baseRef)) {
+    report.errors.push(`${MANIFEST_FILE}: premerge.baseRef must name the target branch`)
+  }
+  for (const threshold of ['diffCoverage', 'mutationScore']) {
+    if (!isPercentage(premerge[threshold])) {
+      report.errors.push(`${MANIFEST_FILE}: premerge.${threshold} must be a percentage`)
     }
   }
 }
@@ -107,6 +122,7 @@ const checkManifest = (projectDirectory, report) => {
     )
   }
   checkSecurity(manifest, dependencyNames, report)
+  checkPremerge(manifest, report)
 }
 
 const checkException = (entry, position, context) => {

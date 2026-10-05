@@ -18,6 +18,7 @@
     "lint:secrets": "secretlint --secretlintignore .gitignore \"**/*\"",
     "typecheck": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run typecheck",
     "test": "yarn workspaces foreach -At --exclude {{PROJECT_NAME}} run test",
+    "premerge": "yarn lint && yarn build && yarn typecheck && node .config/foundation/premerge.mjs",
     "validate": "yarn lint && yarn build && yarn typecheck && yarn test",
     "postinstall": "husky"
   },

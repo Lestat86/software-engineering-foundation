@@ -135,6 +135,28 @@ Cycles stay with `import/no-cycle` in ESLint, which reports them in the editor
 and at commit. Add project-specific boundaries, such as a feature that must not
 import another feature's internals, as further `forbidden` entries.
 
+## Pre-merge gate
+
+`premerge` runs `lint`, `typecheck` and `build`, then
+`.config/foundation/premerge.mjs`, which runs `test` with V8 coverage and
+compares the result with the lines the branch changes:
+
+1. The base is `premerge.baseRef` from `.engineering-foundation.yml`,
+   `origin/main` by default; `FOUNDATION_BASE_REF` overrides it, for example
+   with the merge request's target in CI.
+2. Changed lines come from `git diff --unified=0` against the merge base.
+3. A changed line counts when a statement starts on it; it is covered when that
+   statement ran. Files outside the coverage scope of the test configuration,
+   such as tests and entry points, are not measured.
+4. The gate fails below `premerge.diffCoverage` and lists the uncovered
+   lines. It warns when the working tree has uncommitted changes, because the
+   result then does not describe the commit it reports.
+
+The last line, `premerge: passed on <sha>`, is the value the pull request
+template asks for. The coverage scope lives in each `vitest.config`: `include`
+names the source, `exclude` the tests and the entry points that only wire the
+process.
+
 ## Secret scanning
 
 For [`GIT-SECRET-001`](standards/git-workflow.md), `secretlint` with

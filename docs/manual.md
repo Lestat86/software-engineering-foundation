@@ -13,6 +13,7 @@ this manual explains how to work with them day to day.
 - [What a generated project contains](#what-a-generated-project-contains)
 - [Everyday commands](#everyday-commands)
 - [What is checked, and when](#what-is-checked-and-when)
+- [Before a pull request](#before-a-pull-request)
 - [When a check fails](#when-a-check-fails)
 - [Recording an exception](#recording-an-exception)
 - [Workflow modes](#workflow-modes)
@@ -103,7 +104,8 @@ later foundation update can tell your changes from its own.
 | `corepack yarn typecheck` | TypeScript in strict mode. |
 | `corepack yarn test` | The test suite. |
 | `corepack yarn build` | The production build. |
-| `corepack yarn validate` | The complete gate: lint, typecheck, test and build. Run it before every pull request. |
+| `corepack yarn validate` | The complete gate: lint, typecheck, test and build. |
+| `corepack yarn premerge` | Before opening a pull request: the gate plus the checks on what the branch changes. See [Before a pull request](#before-a-pull-request). |
 
 ## What is checked, and when
 
@@ -131,6 +133,27 @@ not is refused at registration, so the application does not start.
 `git commit --no-verify` skips the hooks but not `lint`, so a skipped check
 still fails `validate` and CI.
 
+## Before a pull request
+
+Run `corepack yarn premerge` on a committed branch. It runs lint, typecheck and
+build, then the tests with coverage, and checks that the lines your branch
+changes are exercised by tests:
+
+```text
+diff coverage: 92.3% of 13 changed statement lines against origin/main (minimum 80%)
+premerge: passed on 4c52ce0a…
+```
+
+- Paste the commit from the last line in the pull request checklist. Commit
+  first: with uncommitted changes premerge warns that the result does not
+  describe that commit.
+- The branch is compared with `origin/main`. Fetch it first, or set another
+  target for one run with `FOUNDATION_BASE_REF=origin/develop corepack yarn premerge`,
+  or permanently in `premerge.baseRef` in `.engineering-foundation.yml`.
+- The minimum is `premerge.diffCoverage` in the same file, 80 by default.
+  Lines without a statement, tests and entry points such as `src/server.ts`
+  are not counted.
+
 ## When a check fails
 
 | Message or rule | What to do |
@@ -147,6 +170,8 @@ still fails `validate` and CI.
 | `no-non-package-json` | Declare the package in the `package.json` of the code that imports it. |
 | `no-client-to-server`, `no-server-to-client`, `no-package-to-app` | Move the shared code into `packages/shared` and import it from there. |
 | Fastify: `must declare a response schema`, `a params schema` or `a body schema` | Add the zod schema to the route's `schema` option. For a streaming or proxy route that cannot have a body schema, set `config: { contractException: 'why, and how the payload is bounded' }`. |
+| `premerge`: diff coverage below the minimum | Add tests for the listed `file:lines`, or remove the code if nothing needs it. |
+| `premerge`: base not found | `git fetch origin`, or set `FOUNDATION_BASE_REF` to the branch you will merge into. |
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |

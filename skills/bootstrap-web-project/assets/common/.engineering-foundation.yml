@@ -9,3 +9,7 @@ accessibility: "{{ACCESSIBILITY_TARGET}}"
 packageManager: "yarn@{{YARN_VERSION}}"
 ci: "{{CI_PROFILE}}"
 workflow: "{{WORKFLOW}}"
+premerge:
+  baseRef: "origin/main"
+  diffCoverage: 80
+  mutationScore: 60

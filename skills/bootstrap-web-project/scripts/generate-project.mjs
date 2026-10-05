@@ -32,6 +32,7 @@ const rootOnlyScripts = new Set([
   'lint:fix',
   'lint:foundation',
   'lint:secrets',
+  'premerge',
   'validate',
   'postinstall',
 ])

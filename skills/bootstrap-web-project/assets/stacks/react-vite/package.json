@@ -21,6 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "premerge": "yarn lint && yarn typecheck && yarn build && node .config/foundation/premerge.mjs",
     "validate": "yarn lint && yarn typecheck && yarn test && yarn build",
     "postinstall": "husky"
   },

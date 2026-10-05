@@ -12,8 +12,9 @@ explicit and checkable after bootstrap. The generated
 - **Requirement:** Keep `.engineering-foundation.yml` complete and consistent
   with the project: a semantic `foundationVersion`, the applied `profiles`, a
   security `level` with its `rationale`, the `ci` profile, the `workflow` mode
-  (`assisted` or `autonomous`) and a `packageManager` equal to the one in
-  `package.json`. Update it in the same change that alters what it records.
+  (`assisted` or `autonomous`), a `packageManager` equal to the one in
+  `package.json` and the `premerge` settings: the `baseRef` to compare with and
+  the `diffCoverage` and `mutationScore` percentages. Update it in the same change that alters what it records.
 - **Rationale:** Review, agents and future foundation updates read the record
   to decide which requirements, thresholds and review loop apply. A record that
   drifts from the project silently selects the wrong ones.

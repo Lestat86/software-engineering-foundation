@@ -35,6 +35,8 @@ Every generated project exposes consistent Yarn scripts for:
 - `test`
 - `build`
 - `validate`, which runs the complete local quality gate
+- `premerge`, which runs the gate with the changed-code checks before a pull
+  request
 
 The exact command contracts and tool choices are defined in the linked
 standards. Stack references may extend them but must not weaken them.

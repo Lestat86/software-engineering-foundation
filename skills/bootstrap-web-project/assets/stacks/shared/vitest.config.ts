@@ -6,5 +6,10 @@ export default defineConfig({
     globals: false,
     include: ['src/**/*.test.ts'],
     restoreMocks: true,
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts'],
+    },
   },
 })

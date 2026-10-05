@@ -42,8 +42,11 @@
   defect whenever the behavior is practically automatable.
 - **Rationale:** Tests preserve the reason for a change and prevent known defects
   from returning unnoticed.
-- **Verification:** Review the change and its tests together; reproduce a fixed
-  defect against the regression test when risk justifies it.
+- **Verification:** `corepack yarn premerge` fails when the statement lines a
+  branch changes are covered below `premerge.diffCoverage` in
+  `.engineering-foundation.yml`; review the change and its tests together and
+  reproduce a fixed defect against the regression test when risk justifies
+  it.
 - **Sources:** Practitioner experience with production TypeScript applications.
 - **Exceptions:** If automation is impractical, record the manual verification,
   why automation is disproportionate and any follow-up needed.

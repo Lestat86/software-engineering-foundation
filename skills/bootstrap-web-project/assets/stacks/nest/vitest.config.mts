@@ -20,5 +20,11 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
     restoreMocks: true,
     setupFiles: ['./test/setup.ts'],
+    // The entry point only wires the process; its behavior is tested through the app setup.
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.ts'],
+      exclude: ['src/**/*.test.ts', 'src/main.ts'],
+    },
   },
 })
