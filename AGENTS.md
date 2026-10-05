@@ -23,6 +23,8 @@ of generic tutorials.
   repository too: the foundation passes the gate it ships.
 - Treat WCAG 2.2 AA as mandatory for every React profile.
 - Never print, commit, log or place secrets in fixtures.
+- Update `docs/manual.md` in the same change as any behavior a project user
+  sees: a new check, script, option, generated file or failure message.
 
 ## Verification
 

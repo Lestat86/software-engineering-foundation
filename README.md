@@ -67,6 +67,8 @@ Next.js is intentionally outside the initial scope.
 
 ## Entry points
 
+- People creating or maintaining a project start at the
+  [user manual](docs/manual.md).
 - Agents bootstrapping a project start at
   [`skills/bootstrap-web-project/SKILL.md`](skills/bootstrap-web-project/SKILL.md).
 - Contributors changing a standard start at
