@@ -6,6 +6,7 @@ import test, { before } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 import {
+  defaultRun,
   measureBaselines,
   measureDiffCoverage,
   parseChangedLines,
@@ -209,4 +210,13 @@ test('premerge fails instead of passing when no coverage report is produced', ()
   }
   const report = runPremerge({ projectDirectory, run: noReport, env: { FOUNDATION_BASE_REF: 'main' } })
   assert.equal(report.errors.length > 0, true)
+})
+
+test('the default runner captures output beyond the 1 MB default of Node', () => {
+  // A lockfile rewrite alone gives a diff of more than 1 MB (issue #2).
+  const size = 2 * 1024 * 1024
+  const result = defaultRun(process.execPath, ['-e', `process.stdout.write('x'.repeat(${String(size)}))`], repositoryRoot)
+
+  assert.equal(result.status, 0)
+  assert.equal(result.stdout.length, size)
 })
