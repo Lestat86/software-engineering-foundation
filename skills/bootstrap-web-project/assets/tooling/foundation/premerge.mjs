@@ -15,6 +15,10 @@ import { parse } from 'yaml'
 const MANIFEST_FILE = '.engineering-foundation.yml'
 const COVERAGE_DIRECTORY = 'coverage/premerge'
 const PERCENT = 100
+// Node caps captured output at 1 MB by default; a branch that rewrites the
+// lockfile, or a large baseline, produces a `git diff` or `git show` well
+// beyond it and the gate died with ENOBUFS before measuring anything.
+const COMMAND_OUTPUT_MAX_BYTES = 268_435_456 // 256 MiB
 const HUNK_HEADER = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/
 const NEW_FILE_HEADER = /^\+\+\+ b\/(.+)$/
 
@@ -160,10 +164,15 @@ const readCoverage = (projectDirectory, packageDirectories) => {
   return coverage
 }
 
-const defaultRun = (command, args, cwd, { showOutput = false } = {}) => {
+/**
+ * Runs a command synchronously and returns its exit status and captured
+ * standard output.
+ */
+export const defaultRun = (command, args, cwd, { showOutput = false } = {}) => {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
+    maxBuffer: COMMAND_OUTPUT_MAX_BYTES,
     stdio: ['ignore', showOutput ? 'inherit' : 'pipe', 'inherit'],
   })
   if (result.error !== undefined) {
