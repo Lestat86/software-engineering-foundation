@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import test, { before } from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -86,6 +86,34 @@ test('the generated Fastify project is complete and fully resolved', () => {
 test('the generated Fastify project passes the shared lint gate', () => {
   assert.doesNotThrow(() => run(binary('eslint'), ['.', '--max-warnings=0']))
   assert.doesNotThrow(() => run(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.']))
+})
+
+test('the generated Fastify project keeps infrastructure packages inside adapter folders', (context) => {
+  const depcruise = () => spawnSync(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.'], {
+    cwd: projectDirectory,
+    encoding: 'utf8',
+    env: { ...process.env, NO_COLOR: '1' },
+  })
+  const featurePath = resolve(projectDirectory, 'src/features/greetings/logger-type.ts')
+  const adapterPath = resolve(projectDirectory, 'src/infrastructure/logger.ts')
+  context.after(() => {
+    rmSync(featurePath, { force: true })
+    rmSync(resolve(projectDirectory, 'src/infrastructure'), { force: true, recursive: true })
+  })
+  // A type-only import still couples the feature to the vendor (STRUCT-PORT-001).
+  const typeImport = 'import type { Logger } from \'pino\'\n\nexport type ApplicationLogger = Logger\n'
+  writeFileSync(featurePath, typeImport)
+  mkdirSync(dirname(adapterPath), { recursive: true })
+  writeFileSync(adapterPath, typeImport)
+
+  const result = depcruise()
+  assert.match(result.stdout, /error infrastructure-only-in-adapters: src\/features\/greetings\/logger-type\.ts/)
+  assert.doesNotMatch(result.stdout, /infrastructure-only-in-adapters: src\/infrastructure\//)
+
+  const localConfigPath = resolve(projectDirectory, '.dependency-cruiser.local.mjs')
+  context.after(() => rmSync(localConfigPath, { force: true }))
+  writeFileSync(localConfigPath, 'export default { ports: { adapterPaths: [ \'^src/features/greetings/\' ] } }\n')
+  assert.doesNotMatch(depcruise().stdout, /infrastructure-only-in-adapters/)
 })
 
 test('the generated Fastify project scans committable files for secrets without printing them', async (context) => {

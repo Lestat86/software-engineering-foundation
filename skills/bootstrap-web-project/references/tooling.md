@@ -127,6 +127,15 @@ from one file at a time:
   the workspace boundaries of [`STRUCT-BOUNDARY-001`](standards/project-structure.md)
   and [`STRUCT-SHARED-001`](standards/project-structure.md) in a monorepo. They
   match nothing in a single-package project.
+- `infrastructure-only-in-adapters` enforces [`STRUCT-PORT-001`](standards/project-structure.md):
+  production code imports an infrastructure package (ORMs and database
+  drivers, queues, cloud SDKs, identity, email, logging, payments), type-only
+  imports included, only from `src/infrastructure/`, `src/db/` or
+  `src/adapters/`. Frameworks such as Fastify, Nest and React are not on the
+  list. A project adds packages, for example a generated client, and adapter
+  folders, for example an authentication feature that owns its library,
+  through `ports: { packages, adapterPaths }` in `.dependency-cruiser.local.mjs`;
+  a package scope ends with `/`.
 - `not-to-unresolvable` rejects an import that does not resolve. Workspace
   packages under the project scope are exempt: they resolve to build output
   that does not exist before the build, and the typecheck verifies them.
@@ -138,8 +147,9 @@ and is not a development dependency import.
 Project-specific rules, such as a feature that must not import another
 feature's internals, and option overrides, such as `tsConfig` for path
 aliases, go in `.dependency-cruiser.local.mjs`, which default-exports
-`{ forbidden, options }`: its rules are added, a rule with the same name
-replaces the foundation's, and its options override the foundation's. The
+`{ forbidden, options, ports }`: its rules are added, a rule with the same name
+replaces the foundation's, its options override the foundation's, and `ports`
+extends the infrastructure packages and adapter folders. The
 foundation's file stays untouched, so synchronization keeps updating it.
 
 ## Pre-merge gate

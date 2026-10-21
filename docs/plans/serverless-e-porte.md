@@ -101,7 +101,7 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 | Fase | Che cosa | Stato | ADR |
 | --- | --- | --- | --- |
 | 0 | Questo piano | fatta il 2026-10-21 | — |
-| 1 | `STRUCT-PORT-001`, la regola di dependency-cruiser, `supabase.md`, `tooling.md`, manuale, test | da fare | 0023 |
+| 1 | `STRUCT-PORT-001`, la regola di dependency-cruiser, `supabase.md`, `tooling.md`, manuale, test | fatta il 2026-10-21 | 0023 |
 | 2 | Asse `--deploy`: generatore, record, `check-foundation`, `sync-foundation`, indice delle reference, `SKILL.md`, le due reference, manuale, test | da fare | 0024 |
 | 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | da fare | — |
 | 4 | Versione 3.0.0, insieme al resto del piano `enforcement-and-retrofit.md` | da decidere con Alberto | — |
