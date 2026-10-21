@@ -47,14 +47,45 @@ test('the CLI generates a project into a new directory and reports the compositi
   assert.equal(result.status, 0, result.stderr)
   assert.match(result.stdout, /^generated /m)
   assert.match(result.stdout, /^profiles: fastify, supabase$/m)
-  assert.match(result.stdout, /^security: R2; ci: gitlab; workflow: assisted$/m)
+  assert.match(result.stdout, /^security: R2; ci: gitlab; deploy: none; workflow: assisted$/m)
   assert.ok(existsSync(resolve(target, 'src/app.ts')))
   assert.ok(existsSync(resolve(target, 'supabase/migrations/20260910120000_profiles.sql')))
   assert.ok(existsSync(resolve(target, '.gitlab-ci.yml')))
   const manifest = readFileSync(resolve(target, '.engineering-foundation.yml'), 'utf8')
   assert.match(manifest, /^security:\n {2}level: "R2"\n {2}rationale: "Authenticated API\."$/m)
   assert.match(manifest, /^ci: "gitlab"$/m)
+  assert.match(manifest, /^deploy: "none"$/m)
+  const index = readFileSync(resolve(target, 'docs/foundation/README.md'), 'utf8')
+  assert.doesNotMatch(index.split('## Present for reference only')[0], /deploy\//)
   assert.match(manifest, /^workflow: "assisted"$/m)
+})
+
+test('a deploy target is recorded and makes its references applicable', (context) => {
+  const target = resolve(temporaryDirectory(context), 'api')
+  const result = runGenerator([
+    '--target', target,
+    '--name', 'deploy-fixture',
+    '--profile', 'fastify',
+    '--deploy', 'cloud-run',
+  ])
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /; deploy: cloud-run; /)
+  const manifest = readFileSync(resolve(target, '.engineering-foundation.yml'), 'utf8')
+  assert.match(manifest, /^deploy: "cloud-run"$/m)
+  const [applicable, referenceOnly] = readFileSync(
+    resolve(target, 'docs/foundation/README.md'),
+    'utf8',
+  ).split('## Present for reference only')
+  assert.match(applicable, /^- \[deploy\/serverless\.md\]\(deploy\/serverless\.md\)$/m)
+  assert.match(applicable, /^- \[deploy\/cloud-run\.md\]\(deploy\/cloud-run\.md\)$/m)
+  assert.doesNotMatch(referenceOnly, /deploy\//)
+  assert.ok(existsSync(resolve(target, 'docs/foundation/deploy/cloud-run.md')))
+  const requirements = JSON.parse(
+    readFileSync(resolve(target, '.config/foundation/requirements.json'), 'utf8'),
+  )
+  assert.equal(requirements['SERVERLESS-SCHEDULE-001'], 'MUST')
+  assert.equal(requirements['CLOUDRUN-IMAGE-001'], 'SHOULD')
 })
 
 test('the CLI accepts a freshly initialized Git repository as target', (context) => {
@@ -88,6 +119,7 @@ test('the CLI validates its composition before writing anything', (context) => {
     [['--name', 'x', '--profile', 'fastify', '--server', 'nest'], /require the monorepo profile/],
     [['--name', 'x', '--profile', 'angular'], /unknown profile angular/],
     [['--name', 'x', '--profile', 'fastify', '--ci', 'jenkins'], /unknown CI profile jenkins/],
+    [['--name', 'x', '--profile', 'fastify', '--deploy', 'lambda'], /unknown deploy target lambda/],
     [['--name', 'x', '--profile', 'fastify', '--security-level', 'R9'], /R1, R2 or R3/],
     [['--name', 'Bad Name', '--profile', 'fastify'], /lowercase package name/],
     [['--profile', 'fastify'], /--target, --name and at least one --profile/],

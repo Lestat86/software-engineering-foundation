@@ -17,6 +17,7 @@ const REQUIREMENTS_FILE = '.config/foundation/requirements.json'
 const SECURITY_LEVELS = new Set(['R1', 'R2', 'R3'])
 const WORKFLOWS = new Set(['assisted', 'autonomous'])
 const CI_PROFILES = new Set(['none', 'gitlab'])
+const DEPLOY_TARGETS = new Set(['none', 'cloud-run'])
 const SEMANTIC_VERSION = /^\d+\.\d+\.\d+$/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const REQUIRED_EXCEPTION_FIELDS = ['id', 'scope', 'justification', 'owner', 'expires']
@@ -130,6 +131,12 @@ const checkManifest = (projectDirectory, report) => {
   }
   if (!CI_PROFILES.has(manifest.ci)) {
     report.errors.push(`${MANIFEST_FILE}: ci must be none or gitlab`)
+  }
+  // A record written before the deploy axis has no deploy field and means none.
+  if (!DEPLOY_TARGETS.has(manifest.deploy ?? 'none')) {
+    report.errors.push(
+      `${MANIFEST_FILE}: deploy must be ${[...DEPLOY_TARGETS].join(' or ')}`,
+    )
   }
   if (manifest.packageManager !== packageJson.packageManager) {
     report.errors.push(

@@ -39,6 +39,9 @@ const rootOnlyScripts = new Set([
   'postinstall',
 ])
 const workflows = new Set(['assisted', 'autonomous'])
+// Deployment targets carry rules, not assets: each one only makes references
+// applicable, so the list is fixed here rather than read from a directory.
+const DEPLOY_TARGETS = ['none', 'cloud-run']
 const tolerableTargetEntries = new Set(['.git'])
 
 export const readVersions = () => {
@@ -234,13 +237,20 @@ const sharedReferences = [
  * The index of the copied references: which apply to this project and which
  * are present only so that links between references resolve.
  */
-const describeReferenceIndex = ({ appliedProfiles, ci, foundationVersion, securityLevel }) => {
+const describeReferenceIndex = ({
+  appliedProfiles,
+  ci,
+  deploy,
+  foundationVersion,
+  securityLevel,
+}) => {
   const levelFile = { R1: 'r1-basic', R2: 'r2-standard', R3: 'r3-high' }[securityLevel]
   const applicable = [
     ...sharedReferences,
     `security/${levelFile}.md`,
     ...appliedProfiles.flatMap((profileName) => profileReferences[profileName] ?? []),
     ...(ci === 'none' ? [] : [`${ci}-ci.md`]),
+    ...(deploy === 'none' ? [] : ['deploy/serverless.md', `deploy/${deploy}.md`]),
   ]
   const all = collectMarkdownFiles(referencesRoot)
     .map((file) => relative(referencesRoot, file))
@@ -277,6 +287,7 @@ export const hashContent = (content) => createHash('sha256').update(content).dig
 export const renderFoundationAssets = ({
   appliedProfiles,
   ci,
+  deploy = 'none',
   securityLevel,
   values,
   versions,
@@ -316,6 +327,7 @@ export const renderFoundationAssets = ({
     content: describeReferenceIndex({
       appliedProfiles,
       ci,
+      deploy,
       foundationVersion: versions.foundationVersion,
       securityLevel,
     }),
@@ -515,6 +527,28 @@ const generateWorkspace = ({
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, MANIFEST_INDENT_SPACES)}\n`)
 }
 
+/** Rejects an invalid option before anything is written. */
+const validateOptions = ({ ci, deploy, profiles, projectName, securityLevel, workflow }) => {
+  if (typeof projectName !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(projectName)) {
+    throw new Error('projectName must be a lowercase package name without a scope')
+  }
+  if (!Array.isArray(profiles) || profiles.length === 0) {
+    throw new Error('at least one profile is required')
+  }
+  if (ci !== 'none' && !existsSync(resolve(assetsRoot, 'ci', ci))) {
+    throw new Error(`unknown CI profile ${ci}`)
+  }
+  if (!DEPLOY_TARGETS.includes(deploy)) {
+    throw new Error(`unknown deploy target ${deploy}; known: ${DEPLOY_TARGETS.join(', ')}`)
+  }
+  if (!['R1', 'R2', 'R3'].includes(securityLevel)) {
+    throw new Error('securityLevel must be R1, R2 or R3')
+  }
+  if (!workflows.has(workflow)) {
+    throw new Error('workflow must be assisted or autonomous')
+  }
+}
+
 /**
  * Materializes one or more profiles exactly as the skill documents it: common
  * assets, shared tooling copied into `.config/`, Git hooks, each stack
@@ -528,26 +562,13 @@ export const generateProject = ({
   profiles,
   workspaces = {},
   ci = 'none',
+  deploy = 'none',
   htmlLang = 'en',
   securityLevel = 'R1',
   securityRationale = 'Public demonstration content without authentication or personal data.',
   workflow = 'assisted',
 }) => {
-  if (typeof projectName !== 'string' || !/^[a-z0-9][a-z0-9._-]*$/.test(projectName)) {
-    throw new Error('projectName must be a lowercase package name without a scope')
-  }
-  if (!Array.isArray(profiles) || profiles.length === 0) {
-    throw new Error('at least one profile is required')
-  }
-  if (ci !== 'none' && !existsSync(resolve(assetsRoot, 'ci', ci))) {
-    throw new Error(`unknown CI profile ${ci}`)
-  }
-  if (!['R1', 'R2', 'R3'].includes(securityLevel)) {
-    throw new Error('securityLevel must be R1, R2 or R3')
-  }
-  if (!workflows.has(workflow)) {
-    throw new Error('workflow must be assisted or autonomous')
-  }
+  validateOptions({ ci, deploy, profiles, projectName, securityLevel, workflow })
 
   const versions = readVersions()
   const { appliedProfiles, workspaceMap } = describeComposition(versions, profiles, workspaces)
@@ -556,6 +577,7 @@ export const generateProject = ({
       '- Meet WCAG 2.2 AA for every user-visible page, state and viewport.',
     ACCESSIBILITY_TARGET: 'WCAG 2.2 AA',
     CI_PROFILE: ci,
+    DEPLOY_TARGET: deploy,
     FOUNDATION_VERSION: versions.foundationVersion,
     HTML_LANG: htmlLang,
     NODE_ENGINES: `>=${versions.runtime.nodeMajor}.0.0 <${versions.runtime.nodeMajor + 1}`,
@@ -661,6 +683,7 @@ export const generateProject = ({
   const assets = renderFoundationAssets({
     appliedProfiles,
     ci,
+    deploy,
     securityLevel,
     values: rootValues,
     versions,
@@ -672,7 +695,7 @@ export const generateProject = ({
 }
 
 const usage = `usage: generate-project.mjs --target <dir> --name <package-name> --profile <profile>...
-  [--client <profile>] [--server <profile>] [--ci gitlab]
+  [--client <profile>] [--server <profile>] [--ci gitlab] [--deploy ${DEPLOY_TARGETS.join('|')}]
   [--security-level R1|R2|R3] [--security-rationale <text>] [--html-lang <bcp47>]
   [--workflow assisted|autonomous]
 
@@ -690,6 +713,7 @@ const runCli = (argv) => {
       'client': { type: 'string' },
       'server': { type: 'string' },
       'ci': { type: 'string', default: 'none' },
+      'deploy': { type: 'string', default: 'none' },
       'security-level': { type: 'string', default: 'R1' },
       'security-rationale': { type: 'string' },
       'html-lang': { type: 'string', default: 'en' },
@@ -720,6 +744,7 @@ const runCli = (argv) => {
     profiles: values.profile,
     workspaces,
     ci: values.ci,
+    deploy: values.deploy,
     htmlLang: values['html-lang'],
     securityLevel: values['security-level'],
     workflow: values.workflow,
@@ -733,7 +758,8 @@ const runCli = (argv) => {
       `generated ${result.targetDirectory}`,
       `profiles: ${result.appliedProfiles.join(', ')}`,
       `workspaces: ${JSON.stringify(result.workspaceMap)}`,
-      `security: ${values['security-level']}; ci: ${values.ci}; workflow: ${values.workflow}`,
+      `security: ${values['security-level']}; ci: ${values.ci}; deploy: ${values.deploy}; `
+      + `workflow: ${values.workflow}`,
       'next: ensure-git-root.mjs, corepack yarn install, corepack yarn validate',
     ].join('\n') + '\n',
   )

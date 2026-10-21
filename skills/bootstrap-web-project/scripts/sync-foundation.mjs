@@ -34,9 +34,12 @@ const readRecord = (projectDirectory) => {
     throw new Error(`${MANIFEST_FILE} not found: synchronize only a project the foundation generated or adopted`)
   }
   const record = readFileSync(recordPath, 'utf8')
-  const field = (name) => {
+  const field = (name, fallback) => {
     const match = new RegExp(`^${name}: (.+)$`, 'm').exec(record)
     if (match === null) {
+      if (fallback !== undefined) {
+        return fallback
+      }
       throw new Error(`${MANIFEST_FILE} has no ${name} field`)
     }
     return JSON.parse(match[1])
@@ -44,6 +47,9 @@ const readRecord = (projectDirectory) => {
   const level = /^ {2}level: "(R[123])"$/m.exec(record)
   return {
     ci: field('ci'),
+    // Records written before the deploy axis have no field: they deploy nowhere
+    // the foundation has rules for.
+    deploy: field('deploy', 'none'),
     securityLevel: level === null ? 'R2' : level[1],
     foundationVersion: field('foundationVersion'),
     profiles: field('profiles'),
@@ -206,6 +212,7 @@ export const syncFoundation = ({ projectDirectory, apply = false }) => {
   const assets = renderFoundationAssets({
     appliedProfiles: record.profiles,
     ci: record.ci,
+    deploy: record.deploy,
     securityLevel: record.securityLevel,
     values,
     versions,
