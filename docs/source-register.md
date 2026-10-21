@@ -52,6 +52,13 @@ normative basis remains the public sources listed here.
 | [lint-staged documentation](https://github.com/lint-staged/lint-staged) | Fast checks scoped to staged files |
 | [Alistair Cockburn, Hexagonal architecture](https://alistair.cockburn.us/hexagonal-architecture/) | Ports and adapters for infrastructure (`STRUCT-PORT-001`) |
 | [Martin Fowler, Unit of Work](https://martinfowler.com/eaaCatalog/unitOfWork.html) | Transactions behind an opaque handle (`STRUCT-PORT-001`) |
+| [Transactional outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html) | Work enqueued in the transaction of its data change (`SERVERLESS-OUTBOX-001`) |
+| [Cloud Run documentation](https://docs.cloud.google.com/run/docs) | Concurrency, CPU allocation, container contract, sizing, authentication, ingress, secrets and jobs (`SERVERLESS-*`, `CLOUDRUN-*`) |
+| [Cloud Run functions comparison](https://docs.cloud.google.com/run/docs/functions/comparison) | Services with the project's image or functions built from source (`CLOUDRUN-IMAGE-001`) |
+| [Cloud Tasks or Pub/Sub](https://docs.cloud.google.com/tasks/docs/comp-pub-sub) | At-least-once task delivery and deduplication by name (`SERVERLESS-OUTBOX-001`, `SERVERLESS-IDEMPOTENT-001`) |
+| [Cloud Scheduler: create and configure jobs](https://docs.cloud.google.com/scheduler/docs/creating) | Scheduled jobs with OIDC tokens and time zones (`SERVERLESS-SCHEDULE-001`, `CLOUDRUN-PRIVATE-001`) |
+| [Cloud Monitoring alerting conditions](https://docs.cloud.google.com/monitoring/alerts/types-of-conditions) | Metric-absence conditions behind the heartbeat (`SERVERLESS-SCHEDULE-001`, `SERVERLESS-ALERT-001`) |
+| [Secret Manager with Cloud Run](https://docs.cloud.google.com/run/docs/configuring/services/secrets) | Pinned secret versions per service (`CLOUDRUN-SECRETS-001`) |
 
 Exact standard and tool versions are recorded when their requirements are
 implemented, so future updates can be reviewed deliberately. Security profiles
