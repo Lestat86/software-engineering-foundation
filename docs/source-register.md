@@ -50,6 +50,8 @@ normative basis remains the public sources listed here.
 | [commitlint documentation](https://commitlint.js.org/) | Commit-message validation |
 | [Husky documentation](https://typicode.github.io/husky/) | Versioned native Git hooks |
 | [lint-staged documentation](https://github.com/lint-staged/lint-staged) | Fast checks scoped to staged files |
+| [Alistair Cockburn, Hexagonal architecture](https://alistair.cockburn.us/hexagonal-architecture/) | Ports and adapters for infrastructure (`STRUCT-PORT-001`) |
+| [Martin Fowler, Unit of Work](https://martinfowler.com/eaaCatalog/unitOfWork.html) | Transactions behind an opaque handle (`STRUCT-PORT-001`) |
 
 Exact standard and tool versions are recorded when their requirements are
 implemented, so future updates can be reviewed deliberately. Security profiles

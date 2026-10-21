@@ -3,10 +3,14 @@
 // Import cycles are already rejected by `import/no-cycle` in the ESLint
 // configuration, so they are not repeated here.
 //
+// STRUCT-PORT-001: infrastructure packages are imported only by adapters.
+//
 // This file belongs to the foundation. Put project additions in
-// `.dependency-cruiser.local.mjs`, which default-exports `{ forbidden, options }`:
-// its rules are added (a rule with the same name replaces the foundation's)
-// and its options override these, for example `tsConfig` for path aliases.
+// `.dependency-cruiser.local.mjs`, which default-exports
+// `{ forbidden, options, ports }`: its rules are added (a rule with the same
+// name replaces the foundation's), its options override these, for example
+// `tsConfig` for path aliases, and `ports.packages` and `ports.adapterPaths`
+// extend the infrastructure packages and the adapter folders below.
 
 import { existsSync } from 'node:fs'
 import { URL } from 'node:url'
@@ -18,6 +22,24 @@ const localRuleNames = new Set(localRules.map((rule) => rule.name))
 
 const productionSource = String.raw`^(src|apps/[^/]+/src|packages/[^/]+/src)/`
 const testSource = String.raw`(^|/)(test|e2e)/|\.(test|spec)\.[cm]?[jt]sx?$`
+
+// Infrastructure services, not frameworks: databases and ORMs, queues, cloud
+// SDKs, identity, email, logging and payments. A scope ends with `/`.
+const infrastructurePackages = [
+  '@prisma/', 'pg', 'postgres', 'mysql2', 'mongodb', 'mongoose', 'drizzle-orm',
+  'kysely', 'typeorm', 'sequelize', 'pg-boss', 'bullmq', 'bull', 'ioredis',
+  'redis', '@google-cloud/', 'google-auth-library', 'firebase', 'firebase-admin',
+  '@aws-sdk/', '@azure/', '@supabase/supabase-js', 'better-auth', 'pino',
+  'winston', 'nodemailer', 'resend', '@sendgrid/', 'stripe', '@paypal/',
+  ...local.ports?.packages ?? [],
+]
+const adapterPaths = [
+  String.raw`(^|/)src/(infrastructure|db|adapters)/`,
+  ...local.ports?.adapterPaths ?? [],
+]
+const escapePackage = (name) => name.replaceAll(/[.+]/g, String.raw`\$&`)
+const packagePattern = (name) => (name.endsWith('/') ? `${escapePackage(name)}[^/]+` : escapePackage(name))
+const infrastructureModule = `(^|/)node_modules/(${infrastructurePackages.map(packagePattern).join('|')})/`
 
 const foundationRules = [
   {
@@ -59,6 +81,14 @@ const foundationRules = [
     severity: 'error',
     from: {},
     to: { dependencyTypes: ['core'], path: '^(punycode|domain|constants|sys|_linklist|_stream_wrap)$' },
+  },
+  {
+    name: 'infrastructure-only-in-adapters',
+    comment: 'STRUCT-PORT-001: an infrastructure package is imported only by its adapter, '
+      + 'types included; feature code uses the project\'s port.',
+    severity: 'error',
+    from: { path: productionSource, pathNot: [testSource, ...adapterPaths] },
+    to: { path: infrastructureModule },
   },
   {
     name: 'no-client-to-server',

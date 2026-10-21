@@ -37,8 +37,13 @@ implements.
 - Backends create one client per request with the user's access token so
   policies apply, and keep a separate secret-key client for administrative
   tasks that are authorized in application code.
+- The client is created in an adapter, for example
+  `src/infrastructure/supabase/`, and features reach data through the
+  project's port (`STRUCT-PORT-001`); `@supabase/supabase-js` is on the list
+  of infrastructure packages that `lint:deps` keeps inside adapter folders.
 
 ```ts
+// src/infrastructure/supabase/client.ts
 import { createClient } from '@supabase/supabase-js'
 
 import type { Database } from './database.types.ts'
