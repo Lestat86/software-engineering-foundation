@@ -105,9 +105,21 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 | 2 | Asse `--deploy`: generatore, record, `check-foundation`, `sync-foundation`, indice delle reference, `SKILL.md`, le due reference, manuale, test | da fare | 0024 |
 | 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | da fare | — |
 | 4 | Versione 3.0.0, insieme al resto del piano `enforcement-and-retrofit.md` | da decidere con Alberto | — |
-| 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | da fare, dopo ogni fase | — |
+| 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | fase 1 applicata il 2026-10-21; il resto dopo ogni fase | — |
 
 ## Decisioni prese durante il lavoro
+
+- **2026-10-21, pilota.** La regola delle porte sul pilota trova 38 violazioni
+  nel server: 32 del client Prisma generato (`src/generated/`), 6 di Better
+  Auth (`features/auth/`), 5 di pg-boss e pino. Le prime due diventano
+  cartelle d'adattatore dichiarate in `.dependency-cruiser.local.mjs`, le
+  altre una baseline (`.dependency-cruiser-known-violations.json`, passata con
+  `--ignore-known`) che il retrofit del pilota svuota. Da valutare per la
+  foundation: mettere le cartelle di codice generato fra quelle predefinite.
+- **2026-10-21, fase 3.** `lint:deps` dalla root non basta copiarlo dai
+  monorepo generati: nel pilota il client usa l'alias `@/` e dalla root non si
+  risolve senza il suo tsconfig. La guida al retrofit deve dire come passare
+  le configurazioni TypeScript dei workspace (o togliere gli alias).
 
 ## Note
 
