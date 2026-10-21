@@ -209,3 +209,45 @@ test('a project without a foundation root template must still expose the foundat
   assert.ok(premerge)
   assert.deepEqual(syncFoundation({ projectDirectory }).manifestChanges, ['script premerge: missing'])
 })
+
+const freshMonorepo = () => {
+  const projectDirectory = clearGeneratedDirectory('sync-monorepo')
+  generateProject({
+    targetDirectory: projectDirectory,
+    projectName: 'foundation-sync-monorepo',
+    profiles: ['monorepo'],
+    workspaces: { client: 'react-vite', server: 'fastify' },
+  })
+  return projectDirectory
+}
+
+test('a generated monorepo has its root scripts rendered with the project name', () => {
+  const projectDirectory = freshMonorepo()
+  const { scripts } = JSON.parse(read(projectDirectory, 'package.json'))
+  assert.match(scripts.typecheck, /--exclude foundation-sync-monorepo /)
+
+  const report = syncFoundation({ projectDirectory })
+  assert.deepEqual(report.manifestChanges, [])
+  assert.equal(report.aligned, true)
+})
+
+test('a retrofitted root keeps its own scripts even with a root profile listed', () => {
+  const projectDirectory = freshMonorepo()
+  const manifest = read(projectDirectory, '.engineering-foundation.yml')
+  const packageJson = JSON.parse(read(projectDirectory, 'package.json'))
+  const projectScripts = {
+    ...packageJson.scripts,
+    build: 'yarn workspaces foreach -A run build',
+    typecheck: 'tsc -b',
+  }
+  write(projectDirectory, 'package.json', JSON.stringify({ ...packageJson, scripts: projectScripts }))
+  assert.notDeepEqual(syncFoundation({ projectDirectory }).manifestChanges, [])
+
+  write(projectDirectory, '.engineering-foundation.yml', `${manifest}root: "retrofitted"\n`)
+  assert.deepEqual(syncFoundation({ projectDirectory }).manifestChanges, [])
+
+  const { validate, ...withoutValidate } = projectScripts
+  assert.ok(validate)
+  write(projectDirectory, 'package.json', JSON.stringify({ ...packageJson, scripts: withoutValidate }))
+  assert.deepEqual(syncFoundation({ projectDirectory }).manifestChanges, ['script validate: missing'])
+})
