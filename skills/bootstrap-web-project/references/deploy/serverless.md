@@ -36,9 +36,9 @@ infrastructure as code and the outbox code belong to the project.
   `setImmediate` in request code. A test that awaits the response and then
   asserts the side effect fails when the effect is detached.
 - **Sources:** [Cloud Run billing settings and CPU allocation](https://docs.cloud.google.com/run/docs/configuring/billing-settings), [Cloud Run container runtime contract](https://docs.cloud.google.com/run/docs/container-contract).
-- **Exceptions:** A platform setting that keeps the CPU allocated between
-  requests does not make detached work safe, because the instance can still
-  stop; none.
+- **Exceptions:** None. A platform setting that keeps the CPU allocated
+  between requests does not make detached work safe, because the instance can
+  still stop.
 
 ## `SERVERLESS-STATE-001` — no correctness in process memory
 
