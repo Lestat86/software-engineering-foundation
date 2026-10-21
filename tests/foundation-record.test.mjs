@@ -148,6 +148,27 @@ test('the manifest root origin must be known, and a missing one means generated'
   assert.deepEqual(check().errors, [])
 })
 
+test('lint:deps must name the known-violations file after --ignore-known', () => {
+  const manifest = JSON.parse(originals.get('package.json'))
+  const withDepsScript = (command) => {
+    write('package.json', JSON.stringify({
+      ...manifest,
+      scripts: { ...manifest.scripts, 'lint:deps': command },
+    }))
+    return check().errors
+  }
+
+  const bare = withDepsScript('depcruise --config .dependency-cruiser.mjs --ignore-known .')
+  assert.equal(bare.length, 1)
+  assert.match(bare[0], /lint:deps passes --ignore-known without a file/)
+  assert.equal(withDepsScript('depcruise --config .dependency-cruiser.mjs --ignore-known').length, 1)
+
+  assert.deepEqual(withDepsScript(
+    'depcruise --config .dependency-cruiser.mjs '
+    + '--ignore-known .dependency-cruiser-known-violations.json .',
+  ), [])
+})
+
 test('an R1 project installing authentication is warned to reassess its level', () => {
   const manifest = JSON.parse(originals.get('package.json'))
   write(

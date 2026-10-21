@@ -19,6 +19,11 @@ const WORKFLOWS = new Set(['assisted', 'autonomous'])
 const CI_PROFILES = new Set(['none', 'gitlab'])
 const DEPLOY_TARGETS = new Set(['none', 'cloud-run'])
 const ROOT_ORIGINS = new Set(['generated', 'retrofitted'])
+// `--ignore-known` takes an optional file name: followed by `.` it reads `.` as
+// that file, dependency-cruiser prints its help and exits 0, and `lint:deps`
+// passes without checking anything. Followed by nothing, it has no files.
+const DEPS_SCRIPT = 'lint:deps'
+const IGNORE_KNOWN_WITHOUT_FILE = /--ignore-known(?:\s+\.(?:\s|$)|\s*$)/
 const SEMANTIC_VERSION = /^\d+\.\d+\.\d+$/
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const REQUIRED_EXCEPTION_FIELDS = ['id', 'scope', 'justification', 'owner', 'expires']
@@ -106,6 +111,17 @@ const checkPremerge = (manifest, report) => {
   }
 }
 
+const checkDependencyScript = (scripts, report) => {
+  const command = scripts[DEPS_SCRIPT]
+  if (typeof command === 'string' && IGNORE_KNOWN_WITHOUT_FILE.test(command)) {
+    report.errors.push(
+      `package.json: ${DEPS_SCRIPT} passes --ignore-known without a file, so dependency-cruiser `
+      + 'reads the next argument as the file name, prints its help and checks nothing; write '
+      + '--ignore-known .dependency-cruiser-known-violations.json before the paths to check',
+    )
+  }
+}
+
 const checkManifest = (projectDirectory, report) => {
   const manifestPath = resolve(projectDirectory, MANIFEST_FILE)
   if (!existsSync(manifestPath)) {
@@ -153,6 +169,7 @@ const checkManifest = (projectDirectory, report) => {
   }
   checkSecurity(manifest, dependencyNames, report)
   checkPremerge(manifest, report)
+  checkDependencyScript(packageJson.scripts ?? {}, report)
 }
 
 const checkException = (entry, position, context) => {

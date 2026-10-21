@@ -121,12 +121,16 @@ from one file at a time:
 
 - `not-to-dev-dep`, `no-non-package-json` and `no-duplicate-dep-types` keep
   dependency classes correct for [`DEP-MINIMAL-001`](standards/dependencies.md):
-  production code under `src/` never imports a development dependency, every
+  production code under `src/`, `<folder>/src/`, `apps/*/src/` or
+  `packages/*/src/` never imports a development dependency, every
   imported package is declared, and no package is declared twice.
 - `no-client-to-server`, `no-server-to-client` and `no-package-to-app` enforce
   the workspace boundaries of [`STRUCT-BOUNDARY-001`](standards/project-structure.md)
   and [`STRUCT-SHARED-001`](standards/project-structure.md) in a monorepo. They
-  match nothing in a single-package project.
+  match paths from the root (`^apps/client/`, `^apps/server/`, `^packages/`),
+  so `lint:deps` runs once from the root, never per workspace; a layout with
+  other folders redefines them under the same names. They match nothing in a
+  single-package project.
 - `infrastructure-only-in-adapters` enforces [`STRUCT-PORT-001`](standards/project-structure.md):
   production code imports an infrastructure package (ORMs and database
   drivers, queues, cloud SDKs, identity, email, logging, payments), type-only
