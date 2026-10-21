@@ -102,7 +102,7 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 | --- | --- | --- | --- |
 | 0 | Questo piano | fatta il 2026-10-21 | — |
 | 1 | `STRUCT-PORT-001`, la regola di dependency-cruiser, `supabase.md`, `tooling.md`, manuale, test | fatta il 2026-10-21 | 0023 |
-| 2 | Asse `--deploy`: generatore, record, `check-foundation`, `sync-foundation`, indice delle reference, `SKILL.md`, le due reference, manuale, test | da fare | 0024 |
+| 2 | Asse `--deploy`: generatore, record, `check-foundation`, `sync-foundation`, indice delle reference, `SKILL.md`, le due reference, manuale, test | fatta il 2026-10-21 | 0024 |
 | 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | da fare | — |
 | 4 | Versione 3.0.0, insieme al resto del piano `enforcement-and-retrofit.md` | da decidere con Alberto | — |
 | 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | fase 1 applicata il 2026-10-21; il resto dopo ogni fase | — |
@@ -120,6 +120,22 @@ forza bruta seguono `SERVERLESS-STATE-001`.
   monorepo generati: nel pilota il client usa l'alias `@/` e dalla root non si
   risolve senza il suo tsconfig. La guida al retrofit deve dire come passare
   le configurazioni TypeScript dei workspace (o togliere gli alias).
+- **2026-10-21, fase 2.** Il generatore scrive sempre `deploy` nel record,
+  anche `deploy: "none"`; `check-foundation` e `sync-foundation` trattano un
+  record senza `deploy` come `none`, così i progetti esistenti passano senza
+  modifiche e la fase non è un cambiamento incompatibile.
+- **2026-10-21, fase 2.** L'elenco dei target sta fisso nel generatore
+  (`DEPLOY_TARGETS`) e in `check-foundation`, non si ricava da una cartella di
+  asset come per la CI: il target non porta file.
+- **2026-10-21, fase 2.** Le reference stanno in
+  `skills/bootstrap-web-project/references/deploy/`, accanto alle altre: la
+  copia nei progetti e l'hash le coprono già, senza codice nuovo.
+- **2026-10-21, fase 2.** Oltre al piano: `CLOUDRUN-IMAGE-001` chiede anche
+  l'immagine fissata per digest; `CLOUDRUN-ORIGIN-001` ammette come eccezione
+  il bilanciatore di Google con ingresso interno; `SERVERLESS-IDEMPOTENT-001`
+  chiede che l'ultimo tentativo fallito scriva l'esito e un allarme (D-18 del
+  pilota); l'esempio del record nella guida al retrofit riceve
+  `deploy: "none"`.
 
 ## Note
 
