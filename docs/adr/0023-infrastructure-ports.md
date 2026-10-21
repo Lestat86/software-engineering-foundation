@@ -40,7 +40,15 @@ change to every flow.
 
 - Projects that import an infrastructure package from feature code fail
   `lint:deps` until the import moves into an adapter or the path is declared;
-  the change belongs to the 3.0.0 release.
+  the change belongs to the 3.0.0 release. To migrate, run `lint:deps` and,
+  for each `infrastructure-only-in-adapters` error: move the import into an
+  adapter folder; or declare the folder in `ports.adapterPaths` when it is
+  already the vendor's adapter (a library that owns its folder, a generated
+  client), with the reason next to it; or freeze it in
+  `.dependency-cruiser-known-violations.json` and pass that file explicitly
+  to `--ignore-known`, then remove the entries as the code moves. The pilot
+  project found 38 violations: 33 were declared adapter folders and 5 went
+  into the baseline.
 - Contract tests per port, run against every adapter, replace mocks of vendor
   clients, which `TEST-DOUBLE-001` already discourages.
 - The package list is a heuristic: a package missing from it is still subject
