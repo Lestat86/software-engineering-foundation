@@ -120,7 +120,12 @@ const mergeYarnrc = (existing, incoming) => {
   return `${existing.trimEnd()}\n${incoming.slice('packageExtensions:\n'.length)}`
 }
 
-const substitute = (text, values, sourcePath) => {
+/**
+ * Replaces every `{{NAME}}` placeholder of a template with its value and fails
+ * on a placeholder without one. Synchronization renders templates through it
+ * too, so a project compares with what the generator would have written.
+ */
+export const substitute = (text, values, sourcePath) => {
   return text.replace(placeholderPattern, (_match, name) => {
     if (!(name in values)) {
       throw new Error(`unresolved placeholder {{${name}}} in ${sourcePath}`)
@@ -550,6 +555,18 @@ const validateOptions = ({ ci, deploy, profiles, projectName, securityLevel, wor
 }
 
 /**
+ * The values the root `package.json` templates use. Synchronization needs the
+ * same ones to render the expected root scripts of an existing project.
+ */
+export const describeManifestValues = (versions, projectName) => ({
+  NODE_ENGINES: `>=${versions.runtime.nodeMajor}.0.0 <${versions.runtime.nodeMajor + 1}`,
+  NODE_MAJOR: String(versions.runtime.nodeMajor),
+  PROJECT_NAME: projectName,
+  SCOPE: projectName,
+  YARN_VERSION: versions.runtime.yarn,
+})
+
+/**
  * Materializes one or more profiles exactly as the skill documents it: common
  * assets, shared tooling copied into `.config/`, Git hooks, each stack
  * template in order, and a manifest merged from `versions.json`. Overlay
@@ -580,18 +597,14 @@ export const generateProject = ({
     DEPLOY_TARGET: deploy,
     FOUNDATION_VERSION: versions.foundationVersion,
     HTML_LANG: htmlLang,
-    NODE_ENGINES: `>=${versions.runtime.nodeMajor}.0.0 <${versions.runtime.nodeMajor + 1}`,
-    NODE_MAJOR: String(versions.runtime.nodeMajor),
     PROFILES: appliedProfiles.join(', '),
     PROFILES_YAML: JSON.stringify(appliedProfiles),
-    PROJECT_NAME: projectName,
     SECURITY_LEVEL: securityLevel,
     SECURITY_RATIONALE: securityRationale,
-    SCOPE: projectName,
     KNIP_PROFILE_IGNORES: describeKnipIgnores(appliedProfiles, projectName),
     WORKFLOW: workflow,
     WORKSPACES_YAML: JSON.stringify(workspaceMap),
-    YARN_VERSION: versions.runtime.yarn,
+    ...describeManifestValues(versions, projectName),
   }
   const rootValues = { ...values, CONFIG_ROOT: './.config' }
   const workspaceValues = { ...values, CONFIG_ROOT: '../../.config' }

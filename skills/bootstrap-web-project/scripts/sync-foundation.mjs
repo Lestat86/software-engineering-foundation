@@ -9,10 +9,12 @@ import { parseArgs } from 'node:util'
 import {
   ASSET_RECORD_PATH,
   describeKnipIgnores,
+  describeManifestValues,
   formatAssetRecord,
   hashContent,
   readVersions,
   renderFoundationAssets,
+  substitute,
 } from './generate-project.mjs'
 import { CLI_ARGUMENTS_OFFSET } from './generate-project.constants.mjs'
 
@@ -53,6 +55,8 @@ const readRecord = (projectDirectory) => {
     securityLevel: level === null ? 'R2' : level[1],
     foundationVersion: field('foundationVersion'),
     profiles: field('profiles'),
+    // Records without the field describe a root the generator wrote.
+    root: field('root', 'generated'),
     workspaces: field('workspaces'),
   }
 }
@@ -62,9 +66,9 @@ const rootProfiles = ({ profiles, workspaces }) => {
   return profiles.filter((profileName) => !workspaceProfiles.has(profileName))
 }
 
-// The scripts a foundation project runs its checks through. A project whose
-// root is not a foundation template, such as a retrofitted one, must still
-// expose them, with commands that fit its layout.
+// The scripts a foundation project runs its checks through. A root that is not
+// a foundation template, with no root profile or recorded as `root:
+// "retrofitted"`, must still expose them, with commands that fit its layout.
 const FOUNDATION_SCRIPTS = [
   'lint',
   'lint:code',
@@ -82,15 +86,29 @@ const expectedDependencies = ({ profiles }, versions) => {
   }))
 }
 
-const expectedScripts = (record, versions) => {
+// A retrofitted root keeps its own scripts even when it lists a root profile,
+// which still decides the applicable references.
+const RETROFITTED_ROOT = 'retrofitted'
+
+/**
+ * The root scripts the generator would write, rendered with its values so that
+ * placeholders such as `{{PROJECT_NAME}}` compare with the project's names.
+ */
+const expectedScripts = ({ record, values, versions }) => {
+  if (record.root === RETROFITTED_ROOT) {
+    return {}
+  }
   return Object.assign({}, ...rootProfiles(record).map((profileName) => {
     const templatePath = resolve(assetsRoot, versions.profiles[profileName].template, 'package.json')
-    return existsSync(templatePath) ? readJson(templatePath).scripts : {}
+    if (!existsSync(templatePath)) {
+      return {}
+    }
+    return JSON.parse(substitute(readFileSync(templatePath, 'utf8'), values, templatePath)).scripts
   }))
 }
 
-const describeScriptChanges = (record, versions, scripts) => {
-  const expected = expectedScripts(record, versions)
+const describeScriptChanges = ({ record, scripts, values, versions }) => {
+  const expected = expectedScripts({ record, values, versions })
   if (Object.keys(expected).length === 0) {
     return FOUNDATION_SCRIPTS
       .filter((name) => scripts[name] === undefined)
@@ -107,7 +125,7 @@ const describeScriptChanges = (record, versions, scripts) => {
  * required; the rest of each profile's versions are the stack the foundation
  * verified, reported for information because a project may run another one.
  */
-const describeManifestChanges = ({ projectDirectory, record, versions }) => {
+const describeManifestChanges = ({ projectDirectory, record, values, versions }) => {
   const declared = Object.assign({}, ...['.', ...Object.keys(record.workspaces)].map((directory) => {
     const manifest = readJson(resolve(projectDirectory, directory, 'package.json'))
     return { ...manifest.dependencies, ...manifest.devDependencies }
@@ -125,7 +143,7 @@ const describeManifestChanges = ({ projectDirectory, record, versions }) => {
   return {
     required: [
       ...differing(tooling, rootDeclared),
-      ...describeScriptChanges(record, versions, root.scripts ?? {}),
+      ...describeScriptChanges({ record, scripts: root.scripts ?? {}, values, versions }),
     ],
     stack: differing(stack, declared),
   }
@@ -206,8 +224,7 @@ export const syncFoundation = ({ projectDirectory, apply = false }) => {
   const projectName = readJson(resolve(projectDirectory, 'package.json')).name
   const values = {
     KNIP_PROFILE_IGNORES: describeKnipIgnores(record.profiles, projectName),
-    NODE_MAJOR: String(versions.runtime.nodeMajor),
-    SCOPE: projectName,
+    ...describeManifestValues(versions, projectName),
   }
   const assets = renderFoundationAssets({
     appliedProfiles: record.profiles,
@@ -231,6 +248,7 @@ export const syncFoundation = ({ projectDirectory, apply = false }) => {
   const { required: manifestChanges, stack: stackChanges } = describeManifestChanges({
     projectDirectory,
     record,
+    values,
     versions,
   })
   const aligned = actions.every(({ action }) => ALIGNED_ACTIONS.has(action))

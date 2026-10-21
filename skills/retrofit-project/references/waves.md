@@ -57,8 +57,12 @@ deleting it from the files does not remove it from history or clones.
 ### 3. Foundation files
 
 1. Write `.engineering-foundation.yml` (see the worked example). Map each
-   workspace directory to the profile closest to its stack; the root has no
-   profile when it is not a foundation template.
+   workspace directory to the profile closest to its stack. List a root
+   profile such as `monorepo` when its requirements apply to the layout: the
+   profiles decide which references `docs/foundation/README.md` lists. Add
+   `root: "retrofitted"`: the root keeps its own scripts, and
+   `sync-foundation.mjs` checks only that the foundation's scripts exist there
+   instead of comparing them with the root template.
 2. Run `node <foundation>/skills/bootstrap-web-project/scripts/sync-foundation.mjs --target .`,
    review the report, then run it again with `--apply`. It adds every
    foundation-owned file and writes `<file>.sef-new` next to the project's own
@@ -163,6 +167,7 @@ accessibility: "WCAG 2.2 AA"
 packageManager: "yarn@<runtime.yarn>"
 ci: "none"
 deploy: "none"
+root: "retrofitted"
 workflow: "assisted"
 premerge:
   baseRef: "origin/main"

@@ -116,7 +116,7 @@ reference index.
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | Instructions for any coding agent working in the project. |
-| `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, deployment target, workflow mode, and the `premerge` base branch and coverage minimum. |
+| `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, deployment target, workflow mode, and the `premerge` base branch and coverage minimum. An optional `root: "retrofitted"` marks a root the generator did not write: synchronization then requires only the foundation scripts there, while a root profile such as `monorepo` still decides the applicable references; without the line the root counts as `generated`. |
 | `docs/exceptions.yml` | The register of exceptions to foundation requirements, empty at first. |
 | `docs/foundation/` | The foundation requirements, with `README.md` listing the ones that apply to this project. Read-only: synchronization replaces it. |
 | `docs/features/` | Feature plans and specifications, and their templates in `_template/`. |
@@ -228,6 +228,7 @@ premerge: passed on 4c52ce0a…
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
 | `lint:foundation`: `deploy must be none or cloud-run` | Set `deploy` to a supported target, or remove the line: a missing `deploy` means `none`. |
+| `lint:foundation`: `root must be generated or retrofitted` | Write `root: "retrofitted"` for a root the generator did not write, or remove the line. |
 | `lint:foundation`: `premerge.baseRef` or `premerge.diffCoverage` invalid | Set the branch you merge into and a percentage between 0 and 100. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |
 

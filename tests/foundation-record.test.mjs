@@ -134,6 +134,20 @@ test('the manifest deploy target must be known, and a missing one means none', (
   assert.deepEqual(check().errors, [])
 })
 
+test('the manifest root origin must be known, and a missing one means generated', () => {
+  const manifest = originals.get('.engineering-foundation.yml')
+  assert.doesNotMatch(manifest, /^root: /m)
+  assert.deepEqual(check().errors, [])
+
+  write('.engineering-foundation.yml', `${manifest}root: "adopted"\n`)
+  assert.deepEqual(check().errors, [
+    '.engineering-foundation.yml: root must be generated or retrofitted',
+  ])
+
+  write('.engineering-foundation.yml', `${manifest}root: "retrofitted"\n`)
+  assert.deepEqual(check().errors, [])
+})
+
 test('an R1 project installing authentication is warned to reassess its level', () => {
   const manifest = JSON.parse(originals.get('package.json'))
   write(
