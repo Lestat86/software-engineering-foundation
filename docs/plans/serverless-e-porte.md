@@ -110,7 +110,7 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 ## Decisioni prese durante il lavoro
 
 - **2026-10-21, pilota.** La regola delle porte sul pilota trova 38 violazioni
-  nel server: 32 del client Prisma generato (`src/generated/`), 6 di Better
+  nel server: 26 del client Prisma generato (`src/generated/`), 7 di Better
   Auth (`features/auth/`), 5 di pg-boss e pino. Le prime due diventano
   cartelle d'adattatore dichiarate in `.dependency-cruiser.local.mjs`, le
   altre una baseline (`.dependency-cruiser-known-violations.json`, passata con
