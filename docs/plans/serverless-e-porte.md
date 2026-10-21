@@ -105,7 +105,7 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 | 2 | Asse `--deploy`: generatore, record, `check-foundation`, `sync-foundation`, indice delle reference, `SKILL.md`, le due reference, manuale, test | fatta il 2026-10-21 | 0024 |
 | 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | da fare | — |
 | 4 | Versione 3.0.0, insieme al resto del piano `enforcement-and-retrofit.md` | da decidere con Alberto | — |
-| 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | fase 1 applicata il 2026-10-21; il resto dopo ogni fase | — |
+| 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | fasi 1 e 2 applicate il 2026-10-21; il resto dopo ogni fase | — |
 
 ## Decisioni prese durante il lavoro
 
