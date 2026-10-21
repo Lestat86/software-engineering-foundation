@@ -112,7 +112,10 @@ peers as required.
 - **Requirement:** Register `@fastify/helmet`, an explicit CORS origin
   allowlist, `@fastify/rate-limit` and a body size limit, all driven by the
   validated configuration. `TRUST_PROXY` is explicit and enabled only behind a
-  known proxy. Log redaction covers authorization and cookie headers.
+  known proxy. Log redaction covers authorization and cookie headers. With a
+  `deploy` target other than `none`, the in-memory rate limit is only a
+  per-instance brake, and limits against brute force follow
+  [`SERVERLESS-STATE-001`](../deploy/serverless.md).
 - **Rationale:** These controls bound resource use and remove common
   misconfiguration classes before any feature code exists.
 - **Verification:** Tests assert security headers, rate-limit responses and
