@@ -162,6 +162,7 @@ security:
 accessibility: "WCAG 2.2 AA"
 packageManager: "yarn@<runtime.yarn>"
 ci: "none"
+deploy: "none"
 workflow: "assisted"
 premerge:
   baseRef: "origin/main"

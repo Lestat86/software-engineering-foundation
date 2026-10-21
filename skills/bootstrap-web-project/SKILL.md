@@ -27,7 +27,8 @@ user choices and recording every applied foundation decision.
 1. Inspect the target and do not overwrite meaningful existing files without
    explicit authorization.
 2. Determine whether the project is frontend, backend or full-stack; identify
-   the selected supported frameworks, whether GitLab CI is wanted and the
+   the selected supported frameworks, whether GitLab CI is wanted, the
+   deployment target (`none` by default, or `cloud-run`) and the
    workflow mode: `assisted` when people review every pull request, or
    `autonomous` when review is automated. Default to `assisted`.
 3. Read [the shared foundation](references/foundation.md).
@@ -43,7 +44,7 @@ user choices and recording every applied foundation decision.
    node <skill-directory>/scripts/generate-project.mjs \
      --target <dir> --name <package-name> \
      --profile <base-profile> [--profile supabase] \
-     [--client react-vite --server fastify|nest] [--ci gitlab] \
+     [--client react-vite --server fastify|nest] [--ci gitlab] [--deploy cloud-run] \
      --security-level R1|R2|R3 --security-rationale "<why>" [--html-lang <tag>] \
      [--workflow assisted|autonomous]
    ```
@@ -72,6 +73,8 @@ user choices and recording every applied foundation decision.
 - For Nest, read [Nest](references/stacks/nest.md).
 - For Supabase or PostgreSQL, read [Supabase](references/stacks/supabase.md).
 - If GitLab CI is selected, read [GitLab CI](references/gitlab-ci.md).
+- For `--deploy cloud-run`, read [serverless](references/deploy/serverless.md)
+  and [Cloud Run](references/deploy/cloud-run.md).
 
 ## Completion criteria
 

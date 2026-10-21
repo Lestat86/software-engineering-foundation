@@ -118,6 +118,22 @@ test('the manifest must record a known workflow, a rationale and the real packag
   assert.ok(errors.some((error) => /packageManager yarn@1\.22\.22 does not match/.test(error)))
 })
 
+test('the manifest deploy target must be known, and a missing one means none', () => {
+  const manifest = originals.get('.engineering-foundation.yml')
+  assert.match(manifest, /^deploy: "none"$/m)
+
+  write('.engineering-foundation.yml', manifest.replace('deploy: "none"', 'deploy: "lambda"'))
+  assert.deepEqual(check().errors, [
+    '.engineering-foundation.yml: deploy must be none or cloud-run',
+  ])
+
+  write('.engineering-foundation.yml', manifest.replace(/^deploy: .*\n/m, ''))
+  assert.deepEqual(check().errors, [])
+
+  write('.engineering-foundation.yml', manifest.replace('deploy: "none"', 'deploy: "cloud-run"'))
+  assert.deepEqual(check().errors, [])
+})
+
 test('an R1 project installing authentication is warned to reassess its level', () => {
   const manifest = JSON.parse(originals.get('package.json'))
   write(

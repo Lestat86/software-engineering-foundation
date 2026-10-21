@@ -87,18 +87,36 @@ cd ../my-api && corepack yarn install && corepack yarn validate
 | `--security-level` | `R1`, `R2` or `R3`. Any authentication or non-public data means at least `R2`; see the [risk classification](../skills/bootstrap-web-project/references/security/risk-classification.md). |
 | `--security-rationale` | Why that level: identities, data, actions, exposure, worst credible impact. |
 | `--ci` | `gitlab` to add the GitLab pipeline; omitted means no CI. |
+| `--deploy` | `cloud-run` to make the serverless and Cloud Run rules applicable; omitted means `none`. See [Deployment target](#deployment-target). |
 | `--workflow` | `assisted` (default) or `autonomous`; see [Workflow modes](#workflow-modes). |
 | `--html-lang` | Language of the React document, default `en`. |
 
 `ensure-git-root.mjs` makes the new directory its own Git repository, so the
 hooks are never installed into a parent repository.
 
+### Deployment target
+
+`--deploy cloud-run` records `deploy: "cloud-run"` in
+`.engineering-foundation.yml` and lists two more references as applicable in
+`docs/foundation/README.md`: the [serverless rules](../skills/bootstrap-web-project/references/deploy/serverless.md)
+(no work after the response, no correctness in process memory, an outbox for
+work born from a data change, idempotent handlers, declared schedules with an
+absence heartbeat, alerts with a configured recipient, migrations as their own
+step) and the [Cloud Run rules](../skills/bootstrap-web-project/references/deploy/cloud-run.md)
+(explicit sizing, private internal services, pinned secrets per service
+account, an edge secret, base image updates, one Google Cloud project per
+environment). It adds rules, not files: the Dockerfile, the infrastructure
+definition and the outbox code stay the project's. A record without `deploy`
+means `none`, so existing projects pass `lint:foundation` unchanged; to adopt
+a target later, add the line and run `sync-foundation.mjs`, which rewrites the
+reference index.
+
 ## What a generated project contains
 
 | Path | Purpose |
 | --- | --- |
 | `AGENTS.md` | Instructions for any coding agent working in the project. |
-| `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, workflow mode, and the `premerge` base branch and coverage minimum. |
+| `.engineering-foundation.yml` | The project record: foundation version, profiles, security level and rationale, CI, deployment target, workflow mode, and the `premerge` base branch and coverage minimum. |
 | `docs/exceptions.yml` | The register of exceptions to foundation requirements, empty at first. |
 | `docs/foundation/` | The foundation requirements, with `README.md` listing the ones that apply to this project. Read-only: synchronization replaces it. |
 | `docs/features/` | Feature plans and specifications, and their templates in `_template/`. |
@@ -209,6 +227,7 @@ premerge: passed on 4c52ce0a…
 | `lint:foundation`: plan done with an unsettled criterion | Check it if verified, or mark it `manual: <who>` or `deferred: #<issue>`. |
 | `lint:foundation`: exception expired | Review the deviation. Fix it and delete the entry, or renew it with a new `expires` date. |
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
+| `lint:foundation`: `deploy must be none or cloud-run` | Set `deploy` to a supported target, or remove the line: a missing `deploy` means `none`. |
 | `lint:foundation`: `premerge.baseRef` or `premerge.diffCoverage` invalid | Set the branch you merge into and a percentage between 0 and 100. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |
 

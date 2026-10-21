@@ -143,6 +143,26 @@ test('a project without a hash record is adopted file by file', () => {
   assert.ok(existsSync(resolve(projectDirectory, 'lint-staged.config.mjs.sef-new')))
 })
 
+test('the deploy target is read from the record, and a missing one means none', () => {
+  const projectDirectory = freshProject()
+  const manifest = read(projectDirectory, '.engineering-foundation.yml')
+  const index = 'docs/foundation/README.md'
+
+  write(projectDirectory, '.engineering-foundation.yml', manifest.replace(/^deploy: .*\n/m, ''))
+  assert.equal(actionOf(syncFoundation({ projectDirectory }), index), 'current')
+
+  write(projectDirectory, '.engineering-foundation.yml', manifest.replace(
+    'deploy: "none"',
+    'deploy: "cloud-run"',
+  ))
+  const report = syncFoundation({ projectDirectory, apply: true })
+  assert.equal(actionOf(report, index), 'update')
+  assert.match(
+    read(projectDirectory, index).split('## Present for reference only')[0],
+    /\[deploy\/cloud-run\.md\]/,
+  )
+})
+
 test('the command line reports a dry run and refuses a directory without a record', () => {
   const projectDirectory = freshProject()
   const dryRun = spawnSync(process.execPath, [syncScript, '--target', projectDirectory], {
