@@ -160,7 +160,7 @@ later foundation update can tell your changes from its own.
 
 | Script | Checks |
 | --- | --- |
-| `lint:foundation` | The project record is complete and matches `package.json`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, and no unsettled acceptance criterion once `done`. |
+| `lint:foundation` | The project record is complete and matches `package.json`, and `lint:deps` names its known-violations file after `--ignore-known`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, and no unsettled acceptance criterion once `done`. |
 | `lint:code` | ESLint: typed TypeScript rules, arrow functions, named constants instead of inline numbers, tracked debt markers, described suppressions, bounded complexity, SonarJS bug and code-smell rules, React and accessibility rules. |
 | `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries; infrastructure packages are imported only from adapter folders (`STRUCT-PORT-001`). |
 | `lint:secrets` | No secret in any file Git can commit. |
@@ -229,6 +229,7 @@ premerge: passed on 4c52ce0a…
 | `lint:foundation`: record mismatch | Update `.engineering-foundation.yml` to describe the project as it is now. |
 | `lint:foundation`: `deploy must be none or cloud-run` | Set `deploy` to a supported target, or remove the line: a missing `deploy` means `none`. |
 | `lint:foundation`: `root must be generated or retrofitted` | Write `root: "retrofitted"` for a root the generator did not write, or remove the line. |
+| `lint:foundation`: `lint:deps passes --ignore-known without a file` | `--ignore-known` takes an optional file name and reads a following `.` as one: dependency-cruiser prints its help and exits 0 without checking anything. Write `--ignore-known .dependency-cruiser-known-violations.json .`. |
 | `lint:foundation`: `premerge.baseRef` or `premerge.diffCoverage` invalid | Set the branch you merge into and a percentage between 0 and 100. |
 | `lint:foundation` warning about R1 | The project added authentication or payments. Reassess the security level and update the record; the warning never blocks. |
 
@@ -355,7 +356,8 @@ The [waves reference](../skills/retrofit-project/references/waves.md) has the
 exact steps and a worked example for a project with `frontend/`, `server/`
 and a `shared/` folder reached through path aliases: the manifest, the
 scripts, adding the foundation's ESLint rules to an existing configuration,
-running dependency-cruiser per workspace, Knip and coverage settings. Adapt
+running dependency-cruiser once from the root (per workspace its boundary
+rules never fire), Knip and coverage settings. Adapt
 the foundation's dependency-cruiser and Knip configurations through
 `.dependency-cruiser.local.mjs` and `knip.local.js`, never by editing the
 foundation's files.

@@ -20,7 +20,10 @@ const local = existsSync(localConfigUrl) ? (await import(localConfigUrl.href)).d
 const localRules = local.forbidden ?? []
 const localRuleNames = new Set(localRules.map((rule) => rule.name))
 
-const productionSource = String.raw`^(src|apps/[^/]+/src|packages/[^/]+/src)/`
+// Paths are relative to the root `lint:deps` runs from: the project's `src/`,
+// a workspace's under `apps/` or `packages/`, or one in a top-level folder of a
+// retrofitted layout such as `server/src/`.
+const productionSource = String.raw`^(src|[^/]+/src|(apps|packages)/[^/]+/src)/`
 const testSource = String.raw`(^|/)(test|e2e)/|\.(test|spec)\.[cm]?[jt]sx?$`
 
 // Infrastructure services, not frameworks: databases and ORMs, queues, cloud
@@ -126,6 +129,7 @@ export default {
     exclude: {
       path: [
         String.raw`^(dist|coverage|\.config|\.yarn)/`,
+        String.raw`^[^/]+/(dist|coverage)/`,
         String.raw`^(apps|packages)/[^/]+/(dist|coverage)/`,
       ],
     },

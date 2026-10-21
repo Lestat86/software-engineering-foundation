@@ -94,9 +94,21 @@ deleting it from the files does not remove it from history or clones.
   `.config/eslint/base.mjs`. A block that also matches files outside those
   globs, such as `test/`, fails to parse them.
 - **dependency-cruiser.** Project additions go in
-  `.dependency-cruiser.local.mjs`, never in the foundation's file. With path
-  aliases that differ per workspace, run it once per workspace, from the
-  workspace directory, with its tsconfig.
+  `.dependency-cruiser.local.mjs`, never in the foundation's file. In a
+  monorepo run `lint:deps` **once from the root**, as generated monorepos do:
+  `depcruise --config .dependency-cruiser.mjs .`. Never run it per workspace:
+  there the paths start inside the workspace, and `no-client-to-server`,
+  `no-server-to-client` and `no-package-to-app`, which match `^apps/…` and
+  `^packages/…`, never fire. Workspace path aliases, such as a client's `@/*`,
+  do not resolve from the root: add a root `tsconfig.depcruise.json` that maps
+  each alias to its workspace folder and set it in the local file as
+  `options: { tsConfig: { fileName: 'tsconfig.depcruise.json' } }`. Two
+  workspaces cannot share one alias name for different folders in that file:
+  rename one of them. Paths in the local file, such as `ports.adapterPaths`,
+  are then root-relative, for example `^apps/server/src/features/auth/`. When
+  the workspaces are not under `apps/client`, `apps/server` and `packages/`,
+  redefine the three boundary rules in the local file under the same names
+  with the project's folders.
 - **Knip.** Project options go in `knip.local.js`. Knip evaluates
   configuration files such as `vite.config.ts`: if they read environment
   variables, create the `.env` from `.env.example` before running it.
@@ -121,7 +133,7 @@ Turn on the remaining checks, freezing what already violates them:
 | Check | Baseline |
 | --- | --- |
 | ESLint | First fix the existing **warnings** or raise their rules to errors: bulk suppressions freeze errors only, and `--max-warnings=0` fails on any warning. Then `corepack yarn eslint . --suppress-all` writes `eslint-suppressions.json`. New violations fail; fixed ones must be pruned with `--prune-suppressions`, because ESLint fails on stale suppressions. |
-| dependency-cruiser | `depcruise-baseline` writes `.dependency-cruiser-known-violations.json`; add `--ignore-known` to `lint:deps`. |
+| dependency-cruiser | `depcruise-baseline` writes `.dependency-cruiser-known-violations.json`; add `--ignore-known .dependency-cruiser-known-violations.json` to `lint:deps`, before the paths: `depcruise --config .dependency-cruiser.mjs --ignore-known .dependency-cruiser-known-violations.json .`. Always name the file: `--ignore-known` takes an optional file name, so `--ignore-known .` reads `.` as the file, dependency-cruiser prints its help and exits 0, and `lint:deps` passes without checking anything. `lint:foundation` rejects that form. |
 | Stricter TypeScript flags | Enable one workspace at a time, starting with shared code, or keep the flag off with an exception until the wave that fixes it. |
 | Knip | Start with targeted `ignore` entries in `knip.local.js` and remove them as the code is cleaned. |
 
@@ -185,7 +197,7 @@ Root scripts in `package.json`:
   "lint:code": "eslint . --max-warnings=0",
   "lint:fix": "eslint . --fix --max-warnings=0",
   "lint:foundation": "node .config/foundation/check-foundation.mjs",
-  "lint:deps": "yarn workspaces foreach -A --exclude <root package name> run lint:deps",
+  "lint:deps": "depcruise --config .dependency-cruiser.mjs .",
   "lint:secrets": "secretlint --secretlintignore .gitignore \"**/*\"",
   "test": "yarn workspaces foreach -A --exclude <root package name> run test",
   "typecheck": "yarn workspaces foreach -A --exclude <root package name> run typecheck",
@@ -195,19 +207,41 @@ Root scripts in `package.json`:
 }
 ```
 
-In `frontend/package.json` and `server/package.json`:
+`tsconfig.depcruise.json` at the root, read only by dependency-cruiser. Each
+workspace's `@/*` points to its own `src/`, and one file cannot map the same
+alias to two folders, so the server's alias was renamed `@server/*` first:
 
 ```json
 {
-  "lint:deps": "depcruise --config ../.dependency-cruiser.mjs --ts-config tsconfig.json src ../shared/src"
+  "compilerOptions": {
+    "allowJs": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["frontend/src/*"],
+      "@server/*": ["server/src/*"],
+      "@shared/*": ["shared/src/*"]
+    }
+  }
 }
 ```
 
-`.dependency-cruiser.local.mjs`:
+`.dependency-cruiser.local.mjs`, with root-relative paths:
 
 ```js
+const boundary = (name, comment, from, to) => ({
+  name, comment, severity: 'error', from: { path: from }, to: { path: to },
+})
+
 export default {
+  // The workspaces are not under apps/ and packages/: the boundary rules are
+  // redefined under the foundation's names with this layout's folders.
+  forbidden: [
+    boundary('no-client-to-server', 'The client reaches the server over HTTP.', '^frontend/', '^server/'),
+    boundary('no-server-to-client', 'The server never imports client code.', '^server/', '^frontend/'),
+    boundary('no-package-to-app', 'Shared code never imports an application.', '^shared/', '^(frontend|server)/'),
+  ],
   options: {
+    tsConfig: { fileName: 'tsconfig.depcruise.json' },
     // shared/ is not a package: read dependencies from the nearest
     // package.json instead of combining every package.json up the tree.
     combinedDependencies: false,
