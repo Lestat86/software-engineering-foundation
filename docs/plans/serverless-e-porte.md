@@ -103,7 +103,7 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 | 0 | Questo piano | fatta il 2026-10-21 | — |
 | 1 | `STRUCT-PORT-001`, la regola di dependency-cruiser, `supabase.md`, `tooling.md`, manuale, test | fatta il 2026-10-21 | 0023 |
 | 2 | Asse `--deploy`: generatore, record, `check-foundation`, `sync-foundation`, indice delle reference, `SKILL.md`, le due reference, manuale, test | fatta il 2026-10-21 | 0024 |
-| 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | da fare | — |
+| 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | fatta il 2026-10-21 | — |
 | 4 | Versione 3.0.0, insieme al resto del piano `enforcement-and-retrofit.md` | da decidere con Alberto | — |
 | 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | fasi 1 e 2 applicate il 2026-10-21; il resto dopo ogni fase | — |
 
@@ -120,6 +120,25 @@ forza bruta seguono `SERVERLESS-STATE-001`.
   monorepo generati: nel pilota il client usa l'alias `@/` e dalla root non si
   risolve senza il suo tsconfig. La guida al retrofit deve dire come passare
   le configurazioni TypeScript dei workspace (o togliere gli alias).
+- **2026-10-21, fase 3.** Il generatore esporta `substitute` e un nuovo
+  `describeManifestValues` (nome, scope, Node, Yarn), che usa lui stesso:
+  `sync-foundation` li importa da lì come già fa con le altre funzioni, senza
+  un modulo condiviso nuovo, e rende l'intero `package.json` del template.
+- **2026-10-21, fase 3.** Il generatore non scrive `root` nel record: il
+  campo serve solo ai retrofit, e mancante vale `generated` per
+  `check-foundation` e `sync-foundation`. A differenza di `deploy` non è
+  un'opzione del generatore, che scriverebbe sempre lo stesso valore.
+- **2026-10-21, fase 3.** `lint:foundation` rifiuta un `lint:deps` con
+  `--ignore-known` seguito da ` .` o da nulla: dependency-cruiser legge `.`
+  come nome del file, stampa l'aiuto ed esce con 0 (trovato sul pilota).
+- **2026-10-21, fase 3.** Oltre al piano: con `lint:deps` dalla root, il
+  layout dell'esempio della guida (`frontend/`, `server/`, `shared/`) perdeva
+  `not-to-dev-dep` e la regola delle porte, che cercavano il codice solo in
+  `src/`, `apps/*/src/` e `packages/*/src/`. Il file della foundation ora
+  riconosce anche `<cartella>/src/` ed esclude `<cartella>/dist/` e
+  `<cartella>/coverage/`; l'esempio ridefinisce le tre regole di confine con
+  le sue cartelle e rinomina l'alias del server, perché un solo
+  `tsconfig.depcruise.json` non mappa lo stesso alias su due cartelle.
 - **2026-10-21, fase 2.** Il generatore scrive sempre `deploy` nel record,
   anche `deploy: "none"`; `check-foundation` e `sync-foundation` trattano un
   record senza `deploy` come `none`, così i progetti esistenti passano senza
