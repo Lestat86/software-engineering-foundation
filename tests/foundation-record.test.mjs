@@ -254,9 +254,16 @@ test('a plan is checked against its status: questions before work, criteria befo
   write(planPath, withStatus('done').replace(/^- \[ \] <criterion> — auto: <test name>$/m, settled))
   assert.deepEqual(check().errors, [])
 
+  // A superseded plan keeps its open questions and criteria, and names its successor.
+  const superseded = withStatus('superseded', { 'Blocking questions': '- Which tracker owns refunds?' })
+  write(planPath, superseded)
+  assert.deepEqual(check().errors, [`${planPath}: superseded-by is required when the plan is superseded`])
+  write(planPath, superseded.replace(/^status: superseded$/m, 'status: superseded\nsuperseded-by: "ADR 0042"'))
+  assert.deepEqual(check().errors, [])
+
   write(planPath, withStatus('draft').replace('## Out of scope\n', '').replace(/^status: draft$/m, 'status: started'))
   assert.deepEqual(check().errors, [
-    `${planPath}: status must be draft, ready, in-progress or done`,
+    `${planPath}: status must be draft, ready, in-progress, done or superseded`,
     `${planPath} is missing the sections Out of scope`,
   ])
 

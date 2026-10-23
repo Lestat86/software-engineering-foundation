@@ -14,4 +14,6 @@ decisions here or in `AGENTS.md`, never only in an agent's private memory.
 
 `corepack yarn lint` checks every plan except the template: the front matter,
 the required sections, no open blocking question once implementation starts,
-and every acceptance criterion settled once the plan is done.
+and every acceptance criterion settled once the plan is done. A plan overtaken
+before it was implemented stays as a record with `status: superseded` and a
+`superseded-by` naming the decision or plan that replaced it.
