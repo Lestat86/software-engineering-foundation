@@ -62,6 +62,7 @@ explicit and checkable after bootstrap. The generated
   chat or an agent's private memory it is lost to everyone else.
 - **Verification:** `check-foundation.mjs` rejects a plan without front matter,
   with an unknown status or workflow, missing a section, `ready` or later with
-  an open blocking question, or `done` with an unsettled criterion.
+  an open blocking question, `done` with an unsettled criterion, or
+  `superseded` without `superseded-by`.
 - **Sources:** Practitioner experience with agent-assisted development.
 - **Exceptions:** Small changes that need no analysis need no plan.

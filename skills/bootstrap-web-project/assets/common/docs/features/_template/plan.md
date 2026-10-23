@@ -1,7 +1,8 @@
 ---
 issue: "#123"
 # draft: under analysis; ready: analysis complete, no blocking question;
-# in-progress: being implemented; done: merged.
+# in-progress: being implemented; done: merged; superseded: overtaken before
+# it was implemented, with superseded-by naming the decision or plan.
 status: draft
 # Optional: overrides the project workflow mode for this feature.
 # workflow: assisted

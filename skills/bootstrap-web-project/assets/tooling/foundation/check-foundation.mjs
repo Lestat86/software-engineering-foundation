@@ -30,7 +30,9 @@ const REQUIRED_EXCEPTION_FIELDS = ['id', 'scope', 'justification', 'owner', 'exp
 const PERCENT = 100
 
 const FEATURES_DIRECTORY = 'docs/features'
-const PLAN_STATUSES = new Set(['draft', 'ready', 'in-progress', 'done'])
+// `superseded`: overtaken before it was implemented, so neither its questions
+// nor its criteria will ever be settled.
+const PLAN_STATUSES = new Set(['draft', 'ready', 'in-progress', 'done', 'superseded'])
 const STARTED_STATUSES = new Set(['ready', 'in-progress', 'done'])
 const PLAN_SECTIONS = [
   'Goal',
@@ -274,7 +276,10 @@ const checkPlan = (path, projectDirectory, report) => {
     return
   }
   if (!PLAN_STATUSES.has(plan.front.status)) {
-    report.errors.push(`${label}: status must be draft, ready, in-progress or done`)
+    report.errors.push(`${label}: status must be draft, ready, in-progress, done or superseded`)
+  }
+  if (plan.front.status === 'superseded' && !isFilled(plan.front['superseded-by'])) {
+    report.errors.push(`${label}: superseded-by is required when the plan is superseded`)
   }
   if (plan.front.workflow !== undefined && !WORKFLOWS.has(plan.front.workflow)) {
     report.errors.push(`${label}: workflow must be assisted or autonomous`)

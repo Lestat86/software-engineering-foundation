@@ -160,7 +160,7 @@ later foundation update can tell your changes from its own.
 
 | Script | Checks |
 | --- | --- |
-| `lint:foundation` | The project record is complete and matches `package.json`, and `lint:deps` names its known-violations file after `--ignore-known`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, and no unsettled acceptance criterion once `done`. |
+| `lint:foundation` | The project record is complete and matches `package.json`, and `lint:deps` names its known-violations file after `--ignore-known`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, no unsettled acceptance criterion once `done`, and a `superseded-by` once `superseded`. |
 | `lint:code` | ESLint: typed TypeScript rules, arrow functions, named constants instead of inline numbers, `process.env` only in the configuration module, tracked debt markers, described suppressions, bounded complexity, SonarJS bug and code-smell rules, React and accessibility rules. |
 | `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries; infrastructure packages and generated clients are imported only from adapter paths (`STRUCT-PORT-001`). |
 | `lint:secrets` | No secret in any file Git can commit. |
@@ -251,6 +251,7 @@ feature:
 | `ready` | Analysis complete. | No item left under "Blocking questions". |
 | `in-progress` | Being implemented. | Same as `ready`. |
 | `done` | Merged. | Every "Acceptance" item checked (`- [x]`), or marked `manual: <who>`, or `deferred: #<issue>`. |
+| `superseded` | Overtaken before it was implemented; kept as a record. | A `superseded-by` field naming the decision or plan that replaced it. |
 
 While implementing, record every divergence from the plan under "Changes
 during implementation": it is the first thing a reviewer reads.
