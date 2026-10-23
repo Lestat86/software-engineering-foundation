@@ -161,7 +161,7 @@ later foundation update can tell your changes from its own.
 | Script | Checks |
 | --- | --- |
 | `lint:foundation` | The project record is complete and matches `package.json`, and `lint:deps` names its known-violations file after `--ignore-known`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, and no unsettled acceptance criterion once `done`. |
-| `lint:code` | ESLint: typed TypeScript rules, arrow functions, named constants instead of inline numbers, tracked debt markers, described suppressions, bounded complexity, SonarJS bug and code-smell rules, React and accessibility rules. |
+| `lint:code` | ESLint: typed TypeScript rules, arrow functions, named constants instead of inline numbers, `process.env` only in the configuration module, tracked debt markers, described suppressions, bounded complexity, SonarJS bug and code-smell rules, React and accessibility rules. |
 | `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries; infrastructure packages and generated clients are imported only from adapter paths (`STRUCT-PORT-001`). |
 | `lint:secrets` | No secret in any file Git can commit. |
 
@@ -213,6 +213,7 @@ premerge: passed on 4c52ce0a…
 | `not-to-dev-dep` | Move the package to `dependencies` if production needs it, or keep the import in tests and tooling only. |
 | `no-non-package-json` | Declare the package in the `package.json` of the code that imports it. |
 | `no-client-to-server`, `no-server-to-client`, `no-package-to-app` | Move the shared code into `packages/shared` and import it from there. |
+| `no-restricted-properties` on `process.env` | Read the value from the validated configuration (`config.ts` in Fastify, `ConfigService` in Nest) and add it to the schema there. |
 | `infrastructure-only-in-adapters`, `generated-clients-only-in-adapters` | Move the import into an adapter behind a port the project owns, and give callers domain types. A folder or file that is itself an adapter, such as an authentication feature that owns its library or a data module (`\.data\.ts$`), goes in `ports.adapterPaths` of `.dependency-cruiser.local.mjs`, with the reason. |
 | Fastify: `must declare a response schema`, `a params schema` or `a body schema` | Add the zod schema to the route's `schema` option. For a streaming or proxy route that cannot have a body schema, set `config: { contractException: 'why, and how the payload is bounded' }`. |
 | Knip: unused file, export or dependency | Delete what nothing uses. For an export that is deliberate public API, add `/** @public */` above it. For a package used in a way Knip cannot see, add it to `ignoreDependencies` in `knip.config.js` with a comment saying how it is used. |
@@ -393,7 +394,9 @@ verified with; they never block, and upgrading to them is optional. The record's
 `foundationVersion` moves to the new version only when no conflict, missing
 file or manual change remains. Finish with `corepack yarn validate`. A major
 version can make code that passed before fail; its ADR describes the
-migration.
+migration. `eslint.config.mjs` belongs to the project, so a new block from
+`.config/eslint/`, such as `createProcessEnvConfig`, applies only once you
+compose it there.
 
 ## Further reading
 

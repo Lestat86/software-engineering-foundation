@@ -118,6 +118,20 @@ test('the generated Fastify project keeps infrastructure packages inside adapter
   assert.doesNotMatch(depcruise().stdout, /infrastructure-only-in-adapters/)
 })
 
+test('the generated Fastify project reads process.env only in its configuration modules', (context) => {
+  const featurePath = resolve(projectDirectory, 'src/features/greetings/greetings-env.ts')
+  context.after(() => rmSync(featurePath, { force: true }))
+  writeFileSync(featurePath, 'export const greetingsPrefix = process.env.GREETINGS_PREFIX\n')
+
+  const result = spawnSync(binary('eslint'), ['src/features/greetings/greetings-env.ts', 'src/server.ts'], {
+    cwd: projectDirectory,
+    encoding: 'utf8',
+    env: { ...process.env, NO_COLOR: '1' },
+  })
+  assert.match(result.stdout, /greetings-env\.ts[\s\S]*no-restricted-properties/)
+  assert.doesNotMatch(result.stdout, /server\.ts/)
+})
+
 test('the generated Fastify project keeps a generated client inside adapters', (context) => {
   const clientPath = resolve(projectDirectory, 'src/generated/orm/enums.ts')
   const featurePath = resolve(projectDirectory, 'src/features/greetings/channel.ts')

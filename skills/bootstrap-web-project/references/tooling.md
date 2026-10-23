@@ -85,7 +85,13 @@ For every JavaScript or TypeScript project:
 
 React profiles include `react.mjs` and the Vite refresh configuration; Node
 backends and Node-run configuration or test files include `node.mjs` with
-deliberately scoped file globs. Each stack reference describes its template and
+deliberately scoped file globs, plus `createProcessEnvConfig` on server source
+files: `process.env` is read only in the configuration modules it names
+(`CORE-CONFIG-001`), tests excepted. ESLint flat config **replaces** a rule's
+options instead of merging them, so a later project block that also sets
+`no-restricted-properties` on those files silently drops the restriction: it
+must spread `processEnvRestriction` from `node.mjs` into its own options, and a
+probe file shows both restrictions still fire. Each stack reference describes its template and
 composition: [React](stacks/react.md), [Fastify](stacks/fastify.md),
 [Nest](stacks/nest.md) and [Supabase](stacks/supabase.md); the
 [monorepo reference](monorepo.md) composes them under one root.

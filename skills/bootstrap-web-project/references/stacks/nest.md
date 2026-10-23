@@ -89,8 +89,8 @@ implements.
   through the validated `ConfigService`.
 - **Rationale:** Thin controllers keep transport concerns testable in isolation
   and make services reusable across transports.
-- **Verification:** Review controllers for logic beyond mapping and services
-  for direct `process.env` access.
+- **Verification:** Review controllers for logic beyond mapping; ESLint rejects
+  direct `process.env` access outside `src/config/env.ts`.
 - **Sources:** [Nest modules](https://docs.nestjs.com/modules), [Nest providers](https://docs.nestjs.com/providers), practitioner experience with Nest services.
 - **Exceptions:** Cross-cutting infrastructure may be grouped by technical
   responsibility under `src/common/`.
