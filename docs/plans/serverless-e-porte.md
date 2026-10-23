@@ -106,9 +106,18 @@ forza bruta seguono `SERVERLESS-STATE-001`.
 | 3 | Issue #1 e guida al retrofit su `lint:deps` dalla root, con i test | fatta il 2026-10-21 | — |
 | 4 | Versione 3.0.0, insieme ai cambi incompatibili del piano `enforcement-and-retrofit.md` | fatta il 2026-10-21, decisa da Alberto: 3.0.0 su questo branch e PR | — |
 | 5 | Pilota: AntiPhishing-Bot riceve reference, asset e hash, `deploy: "cloud-run"` nel record, `.dependency-cruiser.local.mjs`, `lint:deps` dalla root | fasi 1 e 2 applicate il 2026-10-21; il resto dopo ogni fase | — |
+| 6 | Issue #5–#11 aperte dal pilota: client generati confinati, `process.env` solo nel modulo di configurazione, stato `superseded` dei piani, `SERVERLESS-OUTBOX-001` con lease, conservazione e risposte neutre, `CLOUDRUN-PROXY-001`, `SERVERLESS-CONFIG-001`; versione 3.1.0 | fatta il 2026-10-23, branch `fix/pilot-issues-5-11`, applicata al pilota | — |
 
 ## Decisioni prese durante il lavoro
 
+- **2026-10-23, fase 6.** Versione **3.1.0**, decisa da Alberto. Le
+  aggiunte a `SERVERLESS-OUTBOX-001` stringono un MUST, che per
+  `governance.md` sarebbe una major; resta minor perché l'asse `deploy` è nato
+  nella 3.0.0 e lo usa solo il pilota. `createProcessEnvConfig` è opt-in per i
+  progetti esistenti, perché `eslint.config.mjs` è del progetto; i client
+  generati confinati applicano ciò che `STRUCT-PORT-001` già chiedeva. Per #6
+  solo il requisito e la guida in `fastify.md`: il template ha un punto
+  d'avvio solo, e i gruppi si rivalutano con il secondo progetto che li scrive.
 - **2026-10-21, pilota.** La regola delle porte sul pilota trova 38 violazioni
   nel server: 26 del client Prisma generato (`src/generated/`), 7 di Better
   Auth (`features/auth/`), 5 di pg-boss e pino. Le prime due diventano
