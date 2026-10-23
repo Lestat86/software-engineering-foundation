@@ -4,7 +4,7 @@ import {
   createJavaScriptConfig,
   foundationIgnores,
 } from './.config/eslint/base.mjs'
-import { createNodeConfig } from './.config/eslint/node.mjs'
+import { createNodeConfig, createProcessEnvConfig } from './.config/eslint/node.mjs'
 import {
   createReactConfig,
   createViteReactRefreshConfig,
@@ -33,6 +33,11 @@ export default defineConfig(
       'apps/client/e2e/**/*.ts',
       'packages/**/*.{ts,mts,cts}',
     ],
+  }),
+  // The configuration modules of the Fastify and Nest servers.
+  createProcessEnvConfig({
+    files: ['apps/server/src/**/*.ts'],
+    configModules: ['apps/server/src/config.ts', 'apps/server/src/server.ts', 'apps/server/src/config/env.ts'],
   }),
   {
     name: 'project/server-decorators',

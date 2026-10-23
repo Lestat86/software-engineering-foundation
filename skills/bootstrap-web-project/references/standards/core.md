@@ -66,7 +66,8 @@ must not weaken this baseline.
   without embedding credentials or deployment-specific values.
 - **Verification:** Search tracked files for real environment values, start the
   application with missing required configuration and inspect the resulting
-  diagnostic.
+  diagnostic. In Node backends `createProcessEnvConfig` rejects `process.env`
+  outside the configuration modules, so no read skips validation.
 - **Sources:** [The Twelve-Factor App — Config](https://12factor.net/config), [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html).
 - **Exceptions:** Non-sensitive defaults that are genuinely identical in every
   environment may remain in source.
