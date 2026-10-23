@@ -46,6 +46,19 @@ The profile ships a `.yarnrc.yml` fragment that marks the OpenAPI peers of
 section of the root `.yarnrc.yml` and keep it while the package declares those
 peers as required.
 
+### Configuration for several entry points
+
+The template validates the whole environment with one schema, which suits one
+service. When the same code runs as several services
+([`SERVERLESS-CONFIG-001`](../deploy/serverless.md)), split the schema into
+groups, one per system (core, HTTP, each provider), each a zod object that
+yields its own keys. Each entry point lists its groups and validates them all
+at start, before importing its features, so one error names every missing
+variable. Keep `loadConfig(source)` for scripts and tests. If modules read
+configuration when they load, parse each group on the first access to one of
+its keys, so an entry point that never imports a feature never validates its
+group.
+
 ## `FASTIFY-SCHEMA-001` — every route declares its contract
 
 - **Level:** MUST

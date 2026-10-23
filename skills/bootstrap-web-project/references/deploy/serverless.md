@@ -63,6 +63,29 @@ infrastructure as code and the outbox code belong to the project.
   instance limit is acceptable for burst control when the evidence states it
   is per instance; never for authentication limits.
 
+## `SERVERLESS-CONFIG-001` — each entry point validates only its configuration
+
+- **Level:** MUST
+- **Applies to:** projects with a `deploy` target other than `none` that run
+  one codebase as several services, such as an API, a webhook receiver and a
+  worker
+- **Risk levels:** R1, R2, R3
+- **Requirement:** Each entry point declares the configuration it uses and
+  validates all of it at start, before loading its features, naming every
+  missing or invalid variable and never a value. It does not require the
+  variables of the other entry points, and its service receives only its own
+  secrets, as the target's rules say, such as
+  [`CLOUDRUN-SECRETS-001`](cloud-run.md).
+- **Rationale:** Validating the whole environment in every service forces each
+  one to receive every secret, or operators to hand out placeholders: least
+  privilege on secrets is lost, and a worker cannot start without, say, a
+  messaging token it never uses.
+- **Verification:** A test starts an entry point without a variable that only
+  another entry point uses, and it starts; the same environment stops the
+  entry point that uses it, naming the variable.
+- **Sources:** [`CORE-CONFIG-001`](../standards/core.md), [`SEC-SECRETS-001`](../security/baseline.md).
+- **Exceptions:** None.
+
 ## `SERVERLESS-OUTBOX-001` — work born from a data change goes through an outbox
 
 - **Level:** MUST
