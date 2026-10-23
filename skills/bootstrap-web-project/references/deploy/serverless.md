@@ -78,20 +78,28 @@ infrastructure as code and the outbox code belong to the project.
   claimed within a lease, selected with `FOR UPDATE SKIP LOCKED` so two
   recoveries never take the same row, and sends them after that statement,
   outside any transaction. Delete sent rows after a retention period recorded
-  with the project's other retention periods.
+  with the project's other retention periods. An endpoint that must not
+  reveal whether an account exists, such as a password reset, and enqueues on
+  one branch only lasts at least a fixed minimum duration on every branch, or
+  enqueues on both.
 - **Rationale:** A change and its work then exist together or not at all: a
   crash between commit and send delays the work until the next recovery but
   never loses it, and the queue name stops duplicate sends. Selecting for
   update, sending and committing in one transaction would hold row locks
   during a network call; with the lease, a recovery that dies after claiming
   only delays its rows until the lease expires. Without retention, sent rows
-  grow forever and keep whatever their data carries.
+  grow forever and keep whatever their data carries. A send to the queue
+  takes tens of milliseconds more than the insert alone, so enqueueing only
+  for a known account turns the response time into an account-enumeration
+  oracle, the one a detached send used to hide.
 - **Verification:** Database tests show a rolled-back transaction leaves no
   row, a committed one leaves a row that is sent once, a crash before the
   send is recovered by the periodic run, and a row claimed by a recovery that
-  died is claimed again after the lease; review that no queue client is
-  called inside a transaction and that the retention job deletes sent rows.
-- **Sources:** [Transactional outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html), [Cloud Tasks or Pub/Sub](https://docs.cloud.google.com/tasks/docs/comp-pub-sub), [PostgreSQL `SELECT` locking clause](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE).
+  died is claimed again after the lease; a test shows both branches of an
+  enumeration-sensitive endpoint last at least its minimum; review that no
+  queue client is called inside a transaction and that the retention job
+  deletes sent rows.
+- **Sources:** [Transactional outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html), [Cloud Tasks or Pub/Sub](https://docs.cloud.google.com/tasks/docs/comp-pub-sub), [PostgreSQL `SELECT` locking clause](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE), [`SEC-AUTHN-001`](../security/baseline.md).
 - **Exceptions:** Work that does not depend on a data change, such as a
   scheduled run, is enqueued directly.
 
