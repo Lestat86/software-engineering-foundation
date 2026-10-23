@@ -136,10 +136,17 @@ from one file at a time:
   drivers, queues, cloud SDKs, identity, email, logging, payments), type-only
   imports included, only from `src/infrastructure/`, `src/db/` or
   `src/adapters/`. Frameworks such as Fastify, Nest and React are not on the
-  list. A project adds packages, for example a generated client, and adapter
-  folders, for example an authentication feature that owns its library,
-  through `ports: { packages, adapterPaths }` in `.dependency-cruiser.local.mjs`;
-  a package scope ends with `/`.
+  list. A project adds packages and adapter paths, for example an
+  authentication feature that owns its library, through
+  `ports: { packages, adapterPaths }` in `.dependency-cruiser.local.mjs`; a
+  package scope ends with `/`. Paths are regular expressions, so an adapter
+  path can name files, such as data modules that live in a feature
+  (`\.data\.ts$`).
+- `generated-clients-only-in-adapters` confines a generated client, such as
+  an ORM client generated into `src/generated/`, the same way: only adapter
+  paths import it, types included. The folder is an adapter path itself,
+  since the generated code imports the vendor. A client generated elsewhere is
+  declared in `ports.confinedPaths`.
 - `not-to-unresolvable` rejects an import that does not resolve. Workspace
   packages under the project scope are exempt: they resolve to build output
   that does not exist before the build, and the typecheck verifies them.

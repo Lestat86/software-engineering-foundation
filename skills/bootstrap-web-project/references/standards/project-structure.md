@@ -75,14 +75,17 @@
   rule rejects imports, type-only imports included, of the foundation's list
   of infrastructure packages outside `src/infrastructure/`, `src/db/` and
   `src/adapters/`; projects add packages and adapter paths through `ports` in
-  `.dependency-cruiser.local.mjs`. Review checks that port signatures carry
-  domain types and that each port has a contract test run against every
-  adapter.
+  `.dependency-cruiser.local.mjs`. The `generated-clients-only-in-adapters`
+  rule confines a generated client the same way: `src/generated/`, plus the
+  folders a project declares in `ports.confinedPaths`. Review checks that port
+  signatures carry domain types and that each port has a contract test run
+  against every adapter.
 - **Sources:** [Alistair Cockburn, Hexagonal architecture](https://alistair.cockburn.us/hexagonal-architecture/), [Martin Fowler, Unit of Work](https://martinfowler.com/eaaCatalog/unitOfWork.html), [`TEST-DOUBLE-001`](testing.md), practitioner experience with provider migrations.
 - **Exceptions:** A library mounted as a framework extension, such as an
   authentication library with its own database adapter, may keep its vendor
   imports inside its own folder, declared as an adapter path with the reason.
-  Generated clients are confined the same way.
+  A generated client imports its vendor by construction: its folder is an
+  adapter path, and only adapters import it.
 
 ## `STRUCT-SHARED-001` — evidence before sharing
 

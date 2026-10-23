@@ -123,7 +123,7 @@ reference index.
 | `.config/eslint/` | The shared ESLint modules, composed by `eslint.config.mjs`. |
 | `.config/typescript/` | The shared strict TypeScript configurations. |
 | `.config/foundation/` | The record, exception and plan checker (`check-foundation.mjs`), the pre-merge script (`premerge.mjs`), the known requirement identifiers (`requirements.json`) and the hash of every foundation-owned file (`assets.json`). |
-| `.dependency-cruiser.mjs` | Dependency class, boundary and port rules. Project rules, options and extra infrastructure packages or adapter folders go in `.dependency-cruiser.local.mjs`. |
+| `.dependency-cruiser.mjs` | Dependency class, boundary and port rules. Project rules, options and extra infrastructure packages, adapter paths or generated-client folders go in `.dependency-cruiser.local.mjs`. |
 | `knip.config.js` | Unused file, export and dependency detection, run by `premerge`. Project options go in `knip.local.js`. |
 | `.secretlintrc.json` | Secret scanning rules. |
 | `.husky/`, `commitlint.config.mjs`, `lint-staged.config.mjs` | Git hooks: commit message and staged-file checks. |
@@ -162,7 +162,7 @@ later foundation update can tell your changes from its own.
 | --- | --- |
 | `lint:foundation` | The project record is complete and matches `package.json`, and `lint:deps` names its known-violations file after `--ignore-known`; every exception is complete, refers to a known requirement and has not expired; every feature plan has its front matter and sections, no open blocking question once `ready`, and no unsettled acceptance criterion once `done`. |
 | `lint:code` | ESLint: typed TypeScript rules, arrow functions, named constants instead of inline numbers, tracked debt markers, described suppressions, bounded complexity, SonarJS bug and code-smell rules, React and accessibility rules. |
-| `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries; infrastructure packages are imported only from adapter folders (`STRUCT-PORT-001`). |
+| `lint:deps` | Production code does not import development dependencies; every imported package is declared; client, server and shared packages keep their boundaries; infrastructure packages and generated clients are imported only from adapter paths (`STRUCT-PORT-001`). |
 | `lint:secrets` | No secret in any file Git can commit. |
 
 **When a Fastify application starts**, including in every test that builds
@@ -213,6 +213,7 @@ premerge: passed on 4c52ce0a…
 | `not-to-dev-dep` | Move the package to `dependencies` if production needs it, or keep the import in tests and tooling only. |
 | `no-non-package-json` | Declare the package in the `package.json` of the code that imports it. |
 | `no-client-to-server`, `no-server-to-client`, `no-package-to-app` | Move the shared code into `packages/shared` and import it from there. |
+| `infrastructure-only-in-adapters`, `generated-clients-only-in-adapters` | Move the import into an adapter behind a port the project owns, and give callers domain types. A folder or file that is itself an adapter, such as an authentication feature that owns its library or a data module (`\.data\.ts$`), goes in `ports.adapterPaths` of `.dependency-cruiser.local.mjs`, with the reason. |
 | Fastify: `must declare a response schema`, `a params schema` or `a body schema` | Add the zod schema to the route's `schema` option. For a streaming or proxy route that cannot have a body schema, set `config: { contractException: 'why, and how the payload is bounded' }`. |
 | Knip: unused file, export or dependency | Delete what nothing uses. For an export that is deliberate public API, add `/** @public */` above it. For a package used in a way Knip cannot see, add it to `ignoreDependencies` in `knip.config.js` with a comment saying how it is used. |
 | `premerge`: diff coverage below the minimum | Add tests for the listed `file:lines`, or remove the code if nothing needs it. |
