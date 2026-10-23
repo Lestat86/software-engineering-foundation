@@ -100,6 +100,36 @@ definition for this target.
 - **Exceptions:** Google's own load balancer with internal ingress makes the
   header unnecessary; record which one is in place.
 
+## `CLOUDRUN-PROXY-001` — trusted proxies as a hop count, one client IP
+
+- **Level:** MUST
+- **Applies to:** projects with `deploy: "cloud-run"` whose code reads the
+  client IP or the request protocol
+- **Risk levels:** R1, R2, R3
+- **Requirement:** Trust forwarded headers by the number of hops Google and
+  any load balancer write at the right end of `X-Forwarded-For`, measured in a
+  non-production environment and set in the validated configuration (0
+  locally); never trust every proxy, such as Fastify's `trustProxy: true`. In
+  Fastify 5, whose typings refuse a number, pass `(address, hop) => hop < hops`.
+  Behind an external edge the client IP comes from the edge header as
+  `CLOUDRUN-ORIGIN-001` above says, and the hop count decides only the
+  protocol. Expose the client IP as
+  one request property that every rate limit, audit record and security log
+  line reads, and read the protocol through the framework, never from a raw
+  `x-forwarded-proto` header.
+- **Rationale:** Trusting every proxy takes the leftmost `X-Forwarded-For`
+  entry, which the client writes, so limits and audit count an address the
+  attacker chooses; an address list meant for a private network does not match
+  Google's front end and makes every request look like Google's. The count is
+  fragile: adding a load balancer, CDN or Cloud Armor changes it silently.
+- **Verification:** A test shows a forged `X-Forwarded-For` does not change the
+  client IP and a forged `x-forwarded-proto` does not change the protocol;
+  review that limits, audit and logs read the one property. The deployment
+  checklist measures the count again whenever the chain in front of the
+  service changes.
+- **Sources:** [Fastify `trustProxy`](https://fastify.dev/docs/latest/Reference/Server/#trustproxy), [External Application Load Balancer: `X-Forwarded-For`](https://docs.cloud.google.com/load-balancing/docs/https#x-forwarded-for_header), [`SEC-AUDIT-001`](../security/baseline.md), [`SEC-RESOURCE-001`](../security/baseline.md).
+- **Exceptions:** None.
+
 ## `CLOUDRUN-IMAGE-001` — maintained base image
 
 - **Level:** SHOULD
