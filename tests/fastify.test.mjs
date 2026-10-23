@@ -22,6 +22,13 @@ const run = (command, args, options = {}) => {
   })
 }
 
+// dependency-cruiser exits non-zero on a violation: the tests read its report.
+const depcruise = () => spawnSync(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.'], {
+  cwd: projectDirectory,
+  encoding: 'utf8',
+  env: { ...process.env, NO_COLOR: '1' },
+})
+
 let generated
 
 before(() => {
@@ -89,11 +96,6 @@ test('the generated Fastify project passes the shared lint gate', () => {
 })
 
 test('the generated Fastify project keeps infrastructure packages inside adapter folders', (context) => {
-  const depcruise = () => spawnSync(binary('depcruise'), ['--config', '.dependency-cruiser.mjs', '.'], {
-    cwd: projectDirectory,
-    encoding: 'utf8',
-    env: { ...process.env, NO_COLOR: '1' },
-  })
   const featurePath = resolve(projectDirectory, 'src/features/greetings/logger-type.ts')
   const adapterPath = resolve(projectDirectory, 'src/infrastructure/logger.ts')
   context.after(() => {
@@ -114,6 +116,36 @@ test('the generated Fastify project keeps infrastructure packages inside adapter
   context.after(() => rmSync(localConfigPath, { force: true }))
   writeFileSync(localConfigPath, 'export default { ports: { adapterPaths: [ \'^src/features/greetings/\' ] } }\n')
   assert.doesNotMatch(depcruise().stdout, /infrastructure-only-in-adapters/)
+})
+
+test('the generated Fastify project keeps a generated client inside adapters', (context) => {
+  const clientPath = resolve(projectDirectory, 'src/generated/orm/enums.ts')
+  const featurePath = resolve(projectDirectory, 'src/features/greetings/channel.ts')
+  const dataPath = resolve(projectDirectory, 'src/features/greetings/greetings.data.ts')
+  const localConfigPath = resolve(projectDirectory, '.dependency-cruiser.local.mjs')
+  context.after(() => {
+    rmSync(resolve(projectDirectory, 'src/generated'), { force: true, recursive: true })
+    for (const path of [featurePath, dataPath, localConfigPath]) {
+      rmSync(path, { force: true })
+    }
+  })
+  // The generated client imports the vendor by construction: it is an adapter.
+  mkdirSync(dirname(clientPath), { recursive: true })
+  writeFileSync(clientPath, 'import type { Logger } from \'pino\'\n\nexport type Channel = \'email\'\nexport type ClientLogger = Logger\n')
+  const typeImport = 'import type { Channel } from \'../../generated/orm/enums.ts\'\n\nexport type GreetingChannel = Channel\n'
+  writeFileSync(featurePath, typeImport)
+  writeFileSync(dataPath, typeImport)
+
+  const result = depcruise()
+  assert.match(result.stdout, /error generated-clients-only-in-adapters: src\/features\/greetings\/channel\.ts/)
+  assert.match(result.stdout, /error generated-clients-only-in-adapters: src\/features\/greetings\/greetings\.data\.ts/)
+  assert.doesNotMatch(result.stdout, /infrastructure-only-in-adapters: src\/generated\//)
+
+  // An adapter path can name files: a feature's data module may use the client.
+  writeFileSync(localConfigPath, 'export default { ports: { adapterPaths: [ String.raw`\\.data\\.ts$` ] } }\n')
+  const withDataModules = depcruise().stdout
+  assert.match(withDataModules, /error generated-clients-only-in-adapters: src\/features\/greetings\/channel\.ts/)
+  assert.doesNotMatch(withDataModules, /greetings\.data\.ts/)
 })
 
 test('the generated Fastify project scans committable files for secrets without printing them', async (context) => {

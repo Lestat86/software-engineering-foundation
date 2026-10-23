@@ -3,14 +3,17 @@
 // Import cycles are already rejected by `import/no-cycle` in the ESLint
 // configuration, so they are not repeated here.
 //
-// STRUCT-PORT-001: infrastructure packages are imported only by adapters.
+// STRUCT-PORT-001: infrastructure packages and generated clients are imported
+// only by adapters.
 //
 // This file belongs to the foundation. Put project additions in
 // `.dependency-cruiser.local.mjs`, which default-exports
 // `{ forbidden, options, ports }`: its rules are added (a rule with the same
 // name replaces the foundation's), its options override these, for example
-// `tsConfig` for path aliases, and `ports.packages` and `ports.adapterPaths`
-// extend the infrastructure packages and the adapter folders below.
+// `tsConfig` for path aliases, and `ports.packages`, `ports.adapterPaths` and
+// `ports.confinedPaths` extend the infrastructure packages, the adapter paths
+// and the confined paths below. Paths are regular expressions, so an adapter
+// path can name files as well as folders, such as `\.data\.ts$`.
 
 import { existsSync } from 'node:fs'
 import { URL } from 'node:url'
@@ -36,8 +39,15 @@ const infrastructurePackages = [
   'winston', 'nodemailer', 'resend', '@sendgrid/', 'stripe', '@paypal/',
   ...local.ports?.packages ?? [],
 ]
+// Project code that only adapters may import, such as a generated ORM client.
+// It imports the vendor by construction, so it is an adapter path too.
+const confinedPaths = [
+  String.raw`(^|/)src/generated/`,
+  ...local.ports?.confinedPaths ?? [],
+]
 const adapterPaths = [
   String.raw`(^|/)src/(infrastructure|db|adapters)/`,
+  ...confinedPaths,
   ...local.ports?.adapterPaths ?? [],
 ]
 const escapePackage = (name) => name.replaceAll(/[.+]/g, String.raw`\$&`)
@@ -92,6 +102,14 @@ const foundationRules = [
     severity: 'error',
     from: { path: productionSource, pathNot: [testSource, ...adapterPaths] },
     to: { path: infrastructureModule },
+  },
+  {
+    name: 'generated-clients-only-in-adapters',
+    comment: 'STRUCT-PORT-001: a generated client is imported only by an adapter, '
+      + 'types included, like the vendor package it wraps.',
+    severity: 'error',
+    from: { path: productionSource, pathNot: [testSource, ...adapterPaths] },
+    to: { path: confinedPaths },
   },
   {
     name: 'no-client-to-server',
