@@ -73,16 +73,24 @@ infrastructure as code and the outbox code belong to the project.
   the change that causes it. After the commit and before the response, send
   each row to the queue and mark it sent. Name the queued task after the row
   identifier, so a second send is rejected as a duplicate and counts as
-  success. A periodic recovery resends only unsent rows older than a margin,
-  claiming them with `FOR UPDATE SKIP LOCKED` so two recoveries never take the
-  same row.
+  success. A periodic recovery resends only unsent rows older than a margin.
+  It claims them in one statement that sets a claim time on unsent rows not
+  claimed within a lease, selected with `FOR UPDATE SKIP LOCKED` so two
+  recoveries never take the same row, and sends them after that statement,
+  outside any transaction. Delete sent rows after a retention period recorded
+  with the project's other retention periods.
 - **Rationale:** A change and its work then exist together or not at all: a
   crash between commit and send delays the work until the next recovery but
-  never loses it, and the queue name stops duplicate sends.
+  never loses it, and the queue name stops duplicate sends. Selecting for
+  update, sending and committing in one transaction would hold row locks
+  during a network call; with the lease, a recovery that dies after claiming
+  only delays its rows until the lease expires. Without retention, sent rows
+  grow forever and keep whatever their data carries.
 - **Verification:** Database tests show a rolled-back transaction leaves no
-  row, a committed one leaves a row that is sent once, and a crash before the
-  send is recovered by the periodic run; review that no queue client is
-  called inside a transaction.
+  row, a committed one leaves a row that is sent once, a crash before the
+  send is recovered by the periodic run, and a row claimed by a recovery that
+  died is claimed again after the lease; review that no queue client is
+  called inside a transaction and that the retention job deletes sent rows.
 - **Sources:** [Transactional outbox pattern](https://microservices.io/patterns/data/transactional-outbox.html), [Cloud Tasks or Pub/Sub](https://docs.cloud.google.com/tasks/docs/comp-pub-sub), [PostgreSQL `SELECT` locking clause](https://www.postgresql.org/docs/current/sql-select.html#SQL-FOR-UPDATE-SHARE).
 - **Exceptions:** Work that does not depend on a data change, such as a
   scheduled run, is enqueued directly.
@@ -169,3 +177,19 @@ infrastructure as code and the outbox code belong to the project.
 - **Sources:** [Cloud Run jobs](https://docs.cloud.google.com/run/docs/create-jobs), practitioner experience with rolling deployments.
 - **Exceptions:** A breaking migration needs a recorded maintenance window
   in which no previous version serves traffic.
+
+## Recommended shape of the outbox
+
+Not required, but simpler to get right:
+
+- **Every task goes through the outbox.** `send` without a transaction opens
+  one of its own, so every task has a row and one recovery covers them all.
+- **The task carries only the row identifier.** The data stays in the
+  database: queues and their logs never see it, and queue body limits (1 MB
+  on Cloud Tasks) do not apply. The handler clears the row's data once it has
+  used it, so a link with a token does not outlive its use.
+- **The unit of work runs work after the commit.** An `onCommit(tx, job)` hook
+  lets the queue adapter send after the commit and before the transaction
+  call returns, and so before the response (`SERVERLESS-RESPONSE-001`). A job
+  must not throw: the commit has already happened, and a failed send is left
+  to the recovery.
